@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="readAloud.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Step Dance – Learn</title>
+    <link rel="stylesheet" href="learn.css">
+</head>
+<body>
+    <header class="nav">
+        <a class="logo" href="index.html">StepSense</a>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="learn.html">Learn</a>
+            <a href="practice.html" class="active" aria-current="page">Practice</a>
+            <a href="settings.html">Settings</a>
+        </nav>
+    </header>
+    <main class="stage" id="stage">
+       <video id="camera" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+    </main>
+    <button id="startButton">Start camera</button>
+    <!--div style="background-color: #0000FF; padding: 15px; border-radius: 16px; display: inline-block; width: 100%;"-->
+    <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2x7MyWybabEz6Y6wvHuwGE?utm_source=generator&theme=0&si=27a97933a42f4f2f" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    <!--/div-->
+</body>
