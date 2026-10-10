@@ -1,0 +1,305 @@
+@font-face {
+    font-family: "Typo Round";
+    src: url("./fonts/Typo_Round_Regular_Demo.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "Sci Fied";
+    src: url("./fonts/scifie.ttf") format("truetype");
+}
+
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Typo Round", sans-serif, "Sci Fied";
+  color: #fdfffc;
+  background-image: url("./images/windows_xp_14.jpg");
+  background-size: cover;
+  background-color: #ffffff;
+  line-height: 1.6;
+}
+
+/* Navigation Bar */
+.navbar {
+  width: 100%;
+  border-bottom: 1px solid #eaeaea;
+  padding: 1.25rem 2rem;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hackathon-name {
+  font-family: "Sci Fied", sans-serif;
+  font-size: 1.5rem;
+  text-decoration: none;
+  color: #241142;
+  letter-spacing: -0.5px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.nav-links a:hover {
+  color: #000;
+}
+
+/* Main Layout */
+.logo {
+font-family: "Typo Round", sans-serif;
+  min-height: calc(100vh - 75px);
+  padding: 4rem 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.logo-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+
+/* Left Content Area */
+.content-left {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-text {
+  font-size: 5rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 2px;
+  margin-bottom: 1.25rem;
+  color: #111;
+}
+
+.subheading {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+  color: #222;
+}
+
+.description {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+/* Wide Action Button */
+.btn-ready {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background-color: #fdfcfcc3;
+  color: #454444;
+  border: 2px solid #a7a5a9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-bottom: 1.5rem;
+}
+
+.btn-ready:hover {
+  background-color: #d9dbec;
+}
+
+.btn-ready:active {
+  transform: scale(0.99);
+}
+
+/* 3 Text Boxes / Cards */
+.card-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.card {
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  border: 2px solid #222;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #222;
+  background: #fafafa;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.card:hover {
+  background: #f0f0f0;
+  border-color: #000;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .logo-container {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-text {
+    font-size: 3.5rem;
+  }
+}
+/* Apply to all elements and pseudo-elements */
+*,
+*::before,
+*::after {
+  cursor: url("cursor.cur"), auto !important;
+}
+
+/* Explicitly force it over interactive tags and states */
+a,
+button,
+input,
+textarea,
+select,
+[role="button"],
+*:hover {
+  cursor: url("cursor.cur"), auto !important;
+}
+#bubble-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* Allows clicks to pass through to buttons/links */
+  z-index: 9999;
+}
+/* Ensure page content stays in front of the clouds */
+.navbar,
+.logo {
+  position: relative;
+  z-index: 2;
+}
+
+/* Clouds container placed over the background */
+.clouds-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 55vh; /* Confines clouds to the upper sky region */
+  overflow: hidden;
+  pointer-events: none; /* Allows clicks to pass through */
+  z-index: 1;
+}
+
+/* Base Cloud Shape */
+.cloud {
+  position: absolute;
+  width: 160px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+  animation: drift linear infinite;
+  will-change: transform;
+}
+
+/* Cloud puffs */
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  width: 70px;
+  height: 70px;
+  top: -35px;
+  left: 25px;
+}
+
+.cloud::after {
+  width: 90px;
+  height: 90px;
+  top: -45px;
+  left: 65px;
+}
+
+/* Individual cloud variations (depth, height, speed) */
+.cloud-1 {
+  top: 8%;
+  transform: scale(0.9);
+  opacity: 0.85;
+  animation-duration: 42s;
+  animation-delay: -5s;
+}
+
+.cloud-2 {
+  top: 18%;
+  transform: scale(1.3);
+  opacity: 0.95;
+  animation-duration: 32s;
+  animation-delay: -18s;
+}
+
+.cloud-3 {
+  top: 30%;
+  transform: scale(0.65);
+  opacity: 0.75;
+  animation-duration: 55s;
+  animation-delay: -28s;
+}
+
+.cloud-4 {
+  top: 12%;
+  transform: scale(1.1);
+  opacity: 0.9;
+  animation-duration: 38s;
+  animation-delay: -35s;
+}
+
+.cloud-5 {
+  top: 25%;
+  transform: scale(0.8);
+  opacity: 0.8;
+  animation-duration: 48s;
+  animation-delay: -10s;
+}
+
+/* Animation keyframe: drift across screen horizontally */
+@keyframes drift {
+  0% {
+    left: -250px;
+  }
+  100% {
+    left: 100vw;
+  }
+}

@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step Dance</title>
+      <script>
+        // The text you want to type out
+        const titleText = "Step Dance !! ";
+        let index = 0;
+
+        function typeTitle() {
+            // Update the browser title with a substring of the text
+            document.title = titleText.substring(0, index + 1);
+            index++;
+
+            // Reset the loop once the full text is typed out
+            if (index >= titleText.length) {
+                index = 0; 
+                // Optional delay before restarting the loop
+                setTimeout(typeTitle, 2000); 
+            } else {
+                // Speed of typing (in milliseconds)
+                setTimeout(typeTitle, 200); 
+            }
+        }
+
+        // Start the effect when the page loads
+        window.onload = typeTitle;
+    </script>
+  <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/331.gif" type="image/x-icon">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Floating Clouds Layer -->
+  <div class="clouds-container" aria-hidden="true">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+    <div class="cloud cloud-5"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="https://hacknc.com/" class="hackathon-name">HACKNC2026</a>
+      <nav class="nav-links">
+        <a href="#link1">home </a>
+        <a href="#link2">learn </a>
+        <a href="#link3">settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- logo Section -->
+  <main class="logo">
+    <div class="logo-container">
+      <div class="content-left">
+        <!-- Main Logo / Big Title -->
+        <h1 class="logo-text">STEP DANCE</h1>
+
+        <!-- Subheading -->
+        <h2 class="subheading">Your premier site for dance practice with audio feedback and instructions!</h2>
+
+        <!-- Description Paragraphs -->
+        
+
+        <!-- Wide "Ready" Button -->
+        <button class="btn-ready">ready (>.<) </button>
+
+        <!-- Three Bottom Text Cards / Buttons -->
+      </div>
+
+      <!-- Right Column (Kept open / adaptable) -->
+      <div class="content-right">
+        <!-- Optional space for illustration or image -->
+      </div>
+    </div>
+  </main>
+<canvas id="bubble-canvas"></canvas>
+  <script src="js/script.js"></script>
+</body>
+</html>
