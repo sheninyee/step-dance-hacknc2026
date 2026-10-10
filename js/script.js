@@ -84,3 +84,10 @@ function animate() {
 }
 
 animate();
+
+const logo = document.querySelector('.logo-text');
+if (logo) {
+  logo.innerHTML = [...logo.textContent]
+    .map((c, i) => `<span class="char" style="--char-index:${i}">${c === ' ' ? '&nbsp;' : c}</span>`)
+    .join('');
+}
