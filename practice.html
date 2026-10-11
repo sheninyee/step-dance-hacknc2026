@@ -21,8 +21,67 @@
        <video id="camera" autoplay playsinline muted></video>
         <canvas id="overlay"></canvas>
     </main>
-    <button id="startButton">Start camera</button>
+    <video id="video" autoplay></video>
+    <button id="start-btn">Start Recording</button>
+    <button id="stop-btn" disabled>Stop Recording</button>
+    <video id="recorded-video" controls></video>
+    <a id="download-link" download="recorded-video.webm">Download Recorded Video</a>
     <!--div style="background-color: #0000FF; padding: 15px; border-radius: 16px; display: inline-block; width: 100%;"-->
     <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2x7MyWybabEz6Y6wvHuwGE?utm_source=generator&theme=0&si=27a97933a42f4f2f" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     <!--/div-->
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const startButton = document.getElementById('start-btn');
+        const stopButton = document.getElementById('stop-btn');
+        const recordedVideoElement = document.getElementById('recorded-video');
+        const downloadLink = document.getElementById('download-link');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // SOURCE: https://dev.to/koolkamalkishor/recording-videos-using-javascript-and-browser-apis-302k
+        // test asl;ksjfgjlfhdlkgjh
+
+        // Access webcam
+        async function startVideoStream() {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        videoElement.srcObject = stream;
+
+        // Set up MediaRecorder to record the stream
+        mediaRecorder = new MediaRecorder(stream);
+
+        // When data becomes available, store it
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+            }
+        };
+
+        // When recording stops, create a video blob and show it
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const videoURL = URL.createObjectURL(blob);
+            recordedVideoElement.src = videoURL;
+            downloadLink.href = videoURL;
+        };
+        }
+        // Start recording
+        startButton.addEventListener('click', () => {
+        recordedChunks = [];
+        mediaRecorder.start();
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        });
+
+        // Stop recording
+        stopButton.addEventListener('click', () => {
+        mediaRecorder.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        });
+
+        // Initialize the video stream
+        startVideoStream();
+    </script> 
 </body>
