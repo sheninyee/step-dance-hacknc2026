@@ -83,104 +83,200 @@
     </div>
   </footer>
 
-  <script>
-    // --- Float Letter Effect on Logo ---
-const logo = document.getElementById('logoText');
-if (logo) {
-  logo.innerHTML = [...logo.textContent]
-    .map((char, i) => `<span class="char" style="--char-index:${i}">${char === ' ' ? '&nbsp;' : char}</span>`)
-    .join('');
-}
-const audio = document.getElementById('practiceAudio');
-const noteThumb = document.getElementById('noteThumb');
-const songTrack = document.getElementById('songTrack');
-const trackProgress = document.getElementById('trackProgress');
-const songTime = document.getElementById('songTime');
-const songHint = document.querySelector('.song-hint');
+<script>
+    // --- 1. Float Letter Effect on Logo ---
+    const logo = document.getElementById('logoText');
+    if (logo) {
+      logo.innerHTML = [...logo.textContent]
+        .map((char, i) => `<span class="char" style="--char-index:${i}">${char === ' ' ? '&nbsp;' : char}</span>`)
+        .join('');
+    }
 
-// Read from URL, or fallback to localStorage, or fallback to default
-const urlParams = new URLSearchParams(window.location.search);
-const currentSongTitle = urlParams.get('song') || localStorage.getItem('selectedSong') || 'World Is Mine';
-const currentAudioSrc = urlParams.get('audio') || localStorage.getItem('selectedAudio') || 'audio/world_is_mine.mp3';
+    // --- 2. Live Webcam Stream & Recording Logic ---
+    const videoElement = document.getElementById('video');
+    const startButton = document.getElementById('start-btn');
+    const stopButton = document.getElementById('stop-btn');
+    const recordedVideoElement = document.getElementById('recorded-video');
+    const uploadVideo = document.getElementById('upload-button');
 
-audio.src = currentAudioSrc;
-audio.load();
+    let mediaRecorder;
+    let recordedChunks = [];
 
-if (songHint) {
-  songHint.textContent = `${currentSongTitle} — Click note to play`;
-}
+    // Ensure video element is muted so the browser allows autoplay
+    if (videoElement) {
+      videoElement.muted = true;
+    }
 
-function formatTime(seconds) {
-  if (isNaN(seconds)) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-}
+    async function startVideoStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
 
-audio.addEventListener('loadedmetadata', () => {
-  if (songTime) {
-    songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
-  }
-});
+        mediaRecorder = new MediaRecorder(stream);
 
-// Click Note Button to Toggle Play / Pause
-if (noteThumb) {
-  noteThumb.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (audio.paused) {
-      audio.play().then(() => {
-        noteThumb.classList.add('playing');
-        if (songHint) songHint.textContent = `${currentSongTitle} — Playing`;
-      }).catch(err => {
-        console.warn('Playback error:', err);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+          const videoURL = URL.createObjectURL(videoBlob);
+          if (recordedVideoElement) {
+            recordedVideoElement.src = videoURL;
+          }
+        };
+      } catch (err) {
+        console.warn('Camera/Mic permission denied or not found:', err);
+      }
+    }
+
+    // Start Live Stream Immediately
+    startVideoStream();
+
+    // Start Recording
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        if (!mediaRecorder || mediaRecorder.state === 'recording') return;
+        recordedChunks = [];
+        mediaRecorder.start();
+        startButton.disabled = true;
+        if (stopButton) stopButton.disabled = false;
       });
-    } else {
-      audio.pause();
-      noteThumb.classList.remove('playing');
-      if (songHint) songHint.textContent = `${currentSongTitle} — Paused`;
     }
-  });
-}
 
-// Progress Bar Tracking
-audio.addEventListener('timeupdate', () => {
-  if (audio.duration) {
-    const pct = (audio.currentTime / audio.duration) * 100;
-    if (trackProgress) trackProgress.style.width = pct + '%';
-    if (noteThumb) noteThumb.style.left = pct + '%';
-    if (songTime) {
-      songTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+    // End Recording
+    if (stopButton) {
+      stopButton.addEventListener('click', () => {
+        if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+        mediaRecorder.stop();
+        if (startButton) startButton.disabled = false;
+        stopButton.disabled = true;
+      });
     }
-  }
-});
 
-// Song Finished
-audio.addEventListener('ended', () => {
-  if (noteThumb) {
-    noteThumb.classList.remove('playing');
-    noteThumb.style.left = '0%';
-  }
-  if (trackProgress) trackProgress.style.width = '0%';
-  if (songTime) {
-    songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
-  }
-  if (songHint) {
-    songHint.textContent = `${currentSongTitle} — Finished. Click to replay`;
-  }
-});
+    // Upload Video Handler
+    if (uploadVideo) {
+      uploadVideo.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+        if (recordedChunks.length === 0) {
+          alert('Please record a video first before uploading.');
+          return;
+        }
+        const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const formData = new FormData();
+        const randomNum = Math.floor(Math.random() * 10000);
+        formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
 
-// Click Track to Seek / Scrub
-if (songTrack) {
-  songTrack.addEventListener('click', (e) => {
-    if (e.target.closest('#noteThumb')) return;
-    const rect = songTrack.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const pct = Math.max(0, Math.min(1, clickX / rect.width));
-    if (audio.duration) {
-      audio.currentTime = pct * audio.duration;
+        try {
+          const response = await fetch('http://127.0.0.1:5000/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (response.ok) {
+            recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
+            recordedVideoElement.load();
+          }
+        } catch (error) {
+          console.error('Upload failed:', error);
+        }
+      });
     }
-  });
-}
+
+    // --- 3. Song Bar Audio Player ---
+    const audio = document.getElementById('practiceAudio');
+    const noteThumb = document.getElementById('noteThumb');
+    const songTrack = document.getElementById('songTrack');
+    const trackProgress = document.getElementById('trackProgress');
+    const songTime = document.getElementById('songTime');
+    const songHint = document.querySelector('.song-hint');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSongTitle = urlParams.get('song') || localStorage.getItem('selectedSong') || 'World Is Mine';
+    const currentAudioSrc = urlParams.get('audio') || localStorage.getItem('selectedAudio') || 'audio/world_is_mine.mp3';
+
+    if (audio) {
+      audio.src = currentAudioSrc;
+      audio.load();
+    }
+
+    if (songHint) {
+      songHint.textContent = `${currentSongTitle} — Click note to play`;
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    if (audio) {
+      audio.addEventListener('loadedmetadata', () => {
+        if (songTime) {
+          songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          const pct = (audio.currentTime / audio.duration) * 100;
+          if (trackProgress) trackProgress.style.width = pct + '%';
+          if (noteThumb) noteThumb.style.left = pct + '%';
+          if (songTime) {
+            songTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+          }
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        if (noteThumb) {
+          noteThumb.classList.remove('playing');
+          noteThumb.style.left = '0%';
+        }
+        if (trackProgress) trackProgress.style.width = '0%';
+        if (songTime) songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
+        if (songHint) songHint.textContent = `${currentSongTitle} — Finished. Click to replay`;
+      });
+    }
+
+    if (noteThumb) {
+      noteThumb.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!audio) return;
+        if (audio.paused) {
+          audio.play().then(() => {
+            noteThumb.classList.add('playing');
+            if (songHint) songHint.textContent = `${currentSongTitle} — Playing`;
+          }).catch(err => console.warn('Audio playback error:', err));
+        } else {
+          audio.pause();
+          noteThumb.classList.remove('playing');
+          if (songHint) songHint.textContent = `${currentSongTitle} — Paused`;
+        }
+      });
+    }
+
+    if (songTrack) {
+      songTrack.addEventListener('click', (e) => {
+        if (e.target.closest('#noteThumb')) return;
+        const rect = songTrack.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const pct = Math.max(0, Math.min(1, clickX / rect.width));
+        if (audio && audio.duration) {
+          audio.currentTime = pct * audio.duration;
+        }
+      });
+    }
   </script>
   <script src="js/practice-coach.js"></script>
 </body>
