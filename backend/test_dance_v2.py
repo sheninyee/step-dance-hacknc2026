@@ -9,9 +9,9 @@ import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import subprocess
+import time
 
 CONNECTIONS = np.array([(c.start, c.end) for c in vision.PoseLandmarksConnections.POSE_LANDMARKS],dtype=np.int32,)
-
 
 def draw_landmarks_on_image(rgb_image, detection_result):
   img = rgb_image if rgb_image.flags.writeable else rgb_image.copy()
@@ -64,7 +64,7 @@ def AnalyzeVideo(filepath):
 
   # write video
   fourcc = cv2.VideoWriter_fourcc(*"mp4v") # try h264?
-  out = cv2.VideoWriter(f"{filepath[:-4]}_wireframe.mp4", fourcc, fps, (frame_width, frame_height)) # change output to become unique to each input bc concurrent processing could happen
+  out = cv2.VideoWriter(f"{filepath[:-4]}_wirefram.mp4", fourcc, fps, (frame_width, frame_height)) # change output to become unique to each input bc concurrent processing could happen
   assert out.isOpened(), "VideoWriter failed to open"
   frame_idx = 0
   last_ts = -1
@@ -98,11 +98,13 @@ def AnalyzeVideo(filepath):
   # Release resources
   cap.release()
   out.release()
-  # subprocess.run([
-  #   "ffmpeg", "-y", "-i", f"{filepath[:-4]}_wireframe.mp4",
-  #   "-c:v", "libx264", "-crf", "23", "-preset", "medium",
-  #   "-pix_fmt", "yuv420p", f"{filepath[:-4]}_wireframe1.mp4",
-  #   ], check=True)
+  # ffmpeg -i input.mp4 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an h264_out.mp4
+  subprocess.run([
+    "ffmpeg", "-y", "-i", f"{filepath[:-4]}_wirefram.mp4",
+    "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "32", "-an",
+    f"{filepath[:-4]}_wireframe.webm"
+], check=True)
+  time.sleep(1)
   cv2.destroyAllWindows() # die
   print("Done!")
   return True
