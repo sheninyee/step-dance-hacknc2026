@@ -115,7 +115,7 @@ export class GeminiCoach {
   }
 
   handleMessage(message) {
-    if (message.error) { this.fail('Gemini rejected this session. Check GEMINI_LIVE_MODEL and API access.'); return; }
+    if (message.error) { this.fail('Gemini rejected this session. Check your permissions.'); return; } // GEMINI_LIVE_MODEL and API access
     if (message.setupComplete) {
       clearTimeout(this.connectTimer);
       this.ready = true;

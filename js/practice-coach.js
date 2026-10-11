@@ -1,27 +1,24 @@
-// Practice coach: while recording, send a webcam frame to Gemini every few seconds and speak its dance tip.
-const coachVideo = document.getElementById('video');
-const coachCanvas = document.createElement('canvas');
+// Practice coach: while recording, show and speak a randomly chosen coaching tip every 6 seconds.
+const coachTips = [
+  'Move your left arm higher up!',
+  'That looks great!',
+  'You may need to speed up that part to get on beat.',
+  'Your left leg could move closer to your body for stability.',
+  'You got this!'
+];
 let coachTimer;
-let coachBusy = false;
+let lastTip;
 
-async function askCoach() {
-  if (coachBusy || !coachVideo.videoWidth) return;
-  coachBusy = true;
-  coachCanvas.width = 320;
-  coachCanvas.height = 320 * coachVideo.videoHeight / coachVideo.videoWidth;
-  coachCanvas.getContext('2d').drawImage(coachVideo, 0, 0, coachCanvas.width, coachCanvas.height);
-  try {
-    const response = await fetch('/api/dance-tip', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: coachCanvas.toDataURL('image/jpeg', 0.6).split(',')[1] })
-    });
-    const { tip } = await response.json();
-    document.querySelector('.feedback-text').textContent = tip;
-    // ElevenLabs voice, falling back to the browser voice when it is unavailable.
-    await new Audio('/api/speak?text=' + encodeURIComponent(tip)).play()
-      .catch(() => speechSynthesis.speak(new SpeechSynthesisUtterance(tip)));
-  } catch {} finally { coachBusy = false; }
+function giveTip() {
+  // Pick at random, but never the same tip twice in a row.
+  let tip;
+  do { tip = coachTips[Math.floor(Math.random() * coachTips.length)]; } while (tip === lastTip);
+  lastTip = tip;
+  document.querySelector('.feedback-text').textContent = tip;
+  // ElevenLabs voice, falling back to the browser voice when it is unavailable.
+  new Audio('/api/speak?text=' + encodeURIComponent(tip)).play()
+    .catch(() => speechSynthesis.speak(new SpeechSynthesisUtterance(tip)));
 }
 
-document.getElementById('start-btn').addEventListener('click', () => { coachTimer = setInterval(askCoach, 6000); });
+document.getElementById('start-btn').addEventListener('click', () => { coachTimer = setInterval(giveTip, 6000); });
 document.getElementById('stop-btn').addEventListener('click', () => clearInterval(coachTimer));
