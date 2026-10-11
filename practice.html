@@ -33,16 +33,16 @@
     <div class="song-track" id="songTrack">
       <div class="track-line"></div>
       <div class="track-progress" id="trackProgress"></div>
-      <button class="note-thumb" id="noteThumb" aria-label="Toggle Play/Pause">
+      <button class="note-thumb" id="noteThumb" type="button" aria-label="Toggle Play/Pause">
         <img src="images/note.png" alt="Note" class="note-img" />
       </button>
     </div>
     <div class="song-info">
       <span class="song-hint">Click note to play / pause</span>
-      <span class="song-time" id="songTime">0:00 / 2:45</span>
+      <span class="song-time" id="songTime">0:00 / 0:00</span>
     </div>
-    <!-- Hidden or optional audio element for the track -->
-    <audio id="practiceAudio" src="audio/song.mp3" preload="metadata"></audio>
+    <!-- Audio element for current track -->
+    <audio id="practiceAudio" preload="auto"></audio>
   </section>
 
   <!-- Two Windows: Live Webcam & Recorded Playback -->
@@ -56,8 +56,8 @@
         </div>
       </div>
       <div class="window-controls">
-        <button id="start-btn" class="aero-btn">Start Recording</button>
-        <button id="stop-btn" class="aero-btn" disabled>End Recording</button>
+        <button id="start-btn" class="aero-btn" type="button">Start Recording</button>
+        <button id="stop-btn" class="aero-btn" type="button" disabled>End Recording</button>
       </div>
     </div>
 
@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="window-controls">
-        <a id="upload-button" download="recorded-video.mp4" class="aero-btn">Upload Video</a>
+        <a id="download-btn" class="aero-btn" download="step-dance-practice.webm">Download Video</a>
       </div>
     </div>
   </main>
@@ -83,7 +83,7 @@
     </div>
   </footer>
 
-<script>
+  <script>
     // --- 1. Float Letter Effect on Logo ---
     const logo = document.getElementById('logoText');
     if (logo) {
@@ -97,12 +97,12 @@
     const startButton = document.getElementById('start-btn');
     const stopButton = document.getElementById('stop-btn');
     const recordedVideoElement = document.getElementById('recorded-video');
-    const uploadVideo = document.getElementById('upload-button');
+    const downloadButton = document.getElementById('download-btn');
 
     let mediaRecorder;
     let recordedChunks = [];
+    let currentVideoURL = null;
 
-    // Ensure video element is muted so the browser allows autoplay
     if (videoElement) {
       videoElement.muted = true;
     }
@@ -113,12 +113,16 @@
           video: true,
           audio: true
         });
-        
+
         if (videoElement) {
           videoElement.srcObject = stream;
         }
 
-        mediaRecorder = new MediaRecorder(stream);
+        const mimeType = MediaRecorder.isTypeSupported('video/mp4; codecs=avc1')
+          ? 'video/mp4'
+          : 'video/webm';
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -127,10 +131,24 @@
         };
 
         mediaRecorder.onstop = () => {
-          const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-          const videoURL = URL.createObjectURL(videoBlob);
+          const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+          const videoBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+
+          if (currentVideoURL) {
+            URL.revokeObjectURL(currentVideoURL);
+          }
+
+          currentVideoURL = URL.createObjectURL(videoBlob);
+
+          // Show in the right preview window
           if (recordedVideoElement) {
-            recordedVideoElement.src = videoURL;
+            recordedVideoElement.src = currentVideoURL;
+          }
+
+          // Attach directly to the Download link
+          if (downloadButton) {
+            downloadButton.href = currentVideoURL;
+            downloadButton.download = `step-dance-practice.${extension}`;
           }
         };
       } catch (err) {
@@ -138,7 +156,6 @@
       }
     }
 
-    // Start Live Stream Immediately
     startVideoStream();
 
     // Start Recording
@@ -162,32 +179,12 @@
       });
     }
 
-    // Upload Video Handler
-    if (uploadVideo) {
-      uploadVideo.addEventListener('click', async () => {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-          mediaRecorder.stop();
-        }
-        if (recordedChunks.length === 0) {
-          alert('Please record a video first before uploading.');
-          return;
-        }
-        const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-        const formData = new FormData();
-        const randomNum = Math.floor(Math.random() * 10000);
-        formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
-
-        try {
-          const response = await fetch('http://127.0.0.1:5000/upload', {
-            method: 'POST',
-            body: formData,
-          });
-          if (response.ok) {
-            recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
-            recordedVideoElement.load();
-          }
-        } catch (error) {
-          console.error('Upload failed:', error);
+    // Prompt if clicked before recording
+    if (downloadButton) {
+      downloadButton.addEventListener('click', (e) => {
+        if (!downloadButton.href || downloadButton.getAttribute('href') === '#') {
+          e.preventDefault();
+          alert('Record a video first using Start/End Recording before downloading!');
         }
       });
     }
@@ -278,6 +275,5 @@
       });
     }
   </script>
-  <script src="js/practice-coach.js"></script>
 </body>
 </html>
