@@ -117,7 +117,6 @@
 
         mediaRecorder.onstop = async () => {
           const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-          await uploadVideoBlob(videoBlob);
           const videoURL = URL.createObjectURL(videoBlob);
           recordedVideoElement.src = videoURL;
           downloadLink.href = videoURL;
