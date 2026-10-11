@@ -155,12 +155,24 @@
           const response = await fetch('http://127.0.0.1:5000/upload', {
           method: 'POST',
           body: formData,
-          // Note: Do NOT manually set 'Content-Type': 'multipart/form-data'. 
-          // The browser automatically sets this with the correct boundary string.
           });
 
           if (!response.ok) {
           throw new Error(`Server error: ${response.statusText}`);
+          }
+
+          if (response.status === 200) {
+            console.log("hit")
+          //   const response1 = await fetch(`http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.mp4`, {
+          // method: 'GET',
+          // });
+
+          // const blob = await response1.blob();
+          // const videoURL = URL.createObjectURL(blob);
+          // recordedVideoElement.src = videoURL;
+
+          recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
+          recordedVideoElement.load(); 
           }
 
           const result = await response.json();

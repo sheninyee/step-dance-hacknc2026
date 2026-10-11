@@ -4,6 +4,8 @@ from flask import Flask
 from flask_cors import CORS
 import test_dance_v2
 import subprocess
+import os
+home_dir = os.path.expanduser("~")
 app = Flask(__name__)
 CORS(app)
 @app.route("/")
@@ -21,7 +23,7 @@ from werkzeug.utils import secure_filename
 
 # SOURCE: https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
 
-UPLOAD_FOLDER = '/home/user/Documents/HackNC/step-dance-hacknc2026/backend/uploads/'
+UPLOAD_FOLDER = f'{home_dir}/Documents/HackNC/step-dance-hacknc2026/backend/uploads/'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -107,13 +109,10 @@ def download_file():
   if not requested_filename: # if no filename
     abort(400, description="Missing 'filename' query parameter.")
 
-  # Sanitize the filename to prevent path traversal vulnerabilities
   filename = secure_filename(requested_filename)
   file_path = os.path.join(UPLOAD_FOLDER, filename)
 
-  # Check if the file actually exists
   if not os.path.isfile(file_path):
     abort(404, description="File not found.")
 
-  # Stream the file to the client
-  return send_file(file_path, as_attachment=True)
+  return send_file(file_path, as_attachment=True, mimetype='video/webm')
