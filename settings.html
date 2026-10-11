@@ -31,6 +31,8 @@
       <a href="songs.html" class="menu-item">Songlist</a>
       <button type="button" class="menu-item resume-btn" id="resumeBtn">Resume</button>
       <a href="StepDanceHome.html" class="menu-item" id="resetBtn">Reset Stage</a>
+      <button type="button" class="menu-item" id="solanaButton">Save practice on Solana</button>
+      <p id="solanaStatus"></p>
     </nav>
   </div>
 
@@ -128,5 +130,7 @@
       animate();
     }
   </script>
+  <script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+  <script src="js/solana.js"></script>
 </body>
 </html>
