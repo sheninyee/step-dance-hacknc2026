@@ -2,3 +2,8 @@
 .env.*
 !.env.example
 node_modules/
+
+# Recorded practice videos uploaded to the local backend
+backend/uploads/
+# Python virtual environment for the backend
+.venv/

@@ -23,7 +23,9 @@ from werkzeug.utils import secure_filename
 
 # SOURCE: https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
 
-UPLOAD_FOLDER = f'{home_dir}/Documents/HackNC/step-dance-hacknc2026/backend/uploads/'
+# Uploads live next to this file, so the path works wherever the project is cloned.
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads') + '/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

@@ -192,16 +192,16 @@
         formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
 
         try {
-          const response = await fetch('http://127.0.0.1:5000/upload', {
+          const response = await fetch('http://127.0.0.1:5010/upload', {
             method: 'POST',
             body: formData,
           });
           if (response.ok) {
-            recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
+            recordedVideoElement.src = `http://127.0.0.1:5010/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
             recordedVideoElement.load();
           }
           if (response.ok) {
-            playRemoteVideo("http://127.0.0.1:5000/download?filename=World_is_Mine_wireframe.webm");
+            playRemoteVideo("http://127.0.0.1:5010/download?filename=World_is_Mine_wireframe.webm");
           }
         } catch (error) {
           console.error('Upload failed:', error);
