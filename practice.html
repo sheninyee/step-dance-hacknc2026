@@ -33,16 +33,16 @@
     <div class="song-track" id="songTrack">
       <div class="track-line"></div>
       <div class="track-progress" id="trackProgress"></div>
-      <button class="note-thumb" id="noteThumb" aria-label="Toggle Play/Pause">
+      <button class="note-thumb" id="noteThumb" type="button" aria-label="Toggle Play/Pause">
         <img src="images/note.png" alt="Note" class="note-img" />
       </button>
     </div>
     <div class="song-info">
       <span class="song-hint">Click note to play / pause</span>
-      <span class="song-time" id="songTime">0:00 / 2:45</span>
+      <span class="song-time" id="songTime">0:00 / 0:00</span>
     </div>
-    <!-- Hidden or optional audio element for the track -->
-    <audio id="practiceAudio" src="audio/song.mp3" preload="metadata"></audio>
+    <!-- Audio element for current track -->
+    <audio id="practiceAudio" preload="auto"></audio>
   </section>
 
   <!-- Two Windows: Live Webcam & Recorded Playback -->
@@ -56,8 +56,8 @@
         </div>
       </div>
       <div class="window-controls">
-        <button id="start-btn" class="aero-btn">Start Recording</button>
-        <button id="stop-btn" class="aero-btn" disabled>End Recording</button>
+        <button id="start-btn" class="aero-btn" type="button">Start Recording</button>
+        <button id="stop-btn" class="aero-btn" type="button" disabled>End Recording</button>
       </div>
     </div>
 
@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="window-controls">
-        <a id="upload-button" download="recorded-video.mp4" class="aero-btn">Upload Video</a>
+        <a id="download-btn" class="aero-btn" download="step-dance-practice.webm">Download Video</a>
       </div>
     </div>
   </main>
@@ -92,22 +92,37 @@
         .join('');
     }
 
-    // --- 2. Webcam Stream & Recording Logic ---
+    // --- 2. Live Webcam Stream & Recording Logic ---
     const videoElement = document.getElementById('video');
     const startButton = document.getElementById('start-btn');
     const stopButton = document.getElementById('stop-btn');
     const recordedVideoElement = document.getElementById('recorded-video');
-    const uploadVideo = document.getElementById('upload-button');
+    const downloadButton = document.getElementById('download-btn');
 
     let mediaRecorder;
     let recordedChunks = [];
+    let currentVideoURL = null;
+
+    if (videoElement) {
+      videoElement.muted = true;
+    }
 
     async function startVideoStream() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        videoElement.srcObject = stream;
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
 
-        mediaRecorder = new MediaRecorder(stream);
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+
+        const mimeType = MediaRecorder.isTypeSupported('video/mp4; codecs=avc1')
+          ? 'video/mp4'
+          : 'video/webm';
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -115,117 +130,150 @@
           }
         };
 
-        mediaRecorder.onstop = async () => {
-          const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-          const videoURL = URL.createObjectURL(videoBlob);
-          recordedVideoElement.src = videoURL;
-          downloadLink.href = videoURL;
+        mediaRecorder.onstop = () => {
+          const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+          const videoBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+
+          if (currentVideoURL) {
+            URL.revokeObjectURL(currentVideoURL);
+          }
+
+          currentVideoURL = URL.createObjectURL(videoBlob);
+
+          // Show in the right preview window
+          if (recordedVideoElement) {
+            recordedVideoElement.src = currentVideoURL;
+          }
+
+          // Attach directly to the Download link
+          if (downloadButton) {
+            downloadButton.href = currentVideoURL;
+            downloadButton.download = `step-dance-practice.${extension}`;
+          }
         };
       } catch (err) {
-        console.warn('Camera access denied or unavailable:', err);
+        console.warn('Camera/Mic permission denied or not found:', err);
       }
     }
 
-    startButton.addEventListener('click', () => {
-      if (!mediaRecorder) return;
-      recordedChunks = [];
-      mediaRecorder.start();
-      startButton.disabled = true;
-      stopButton.disabled = false;
-    });
+    startVideoStream();
 
-    stopButton.addEventListener('click', () => {
-      if (!mediaRecorder) return;
-      mediaRecorder.stop();
-      startButton.disabled = false;
-      stopButton.disabled = true;
-      // Log the session in Tiger Data, then speak a Snowflake Cortex tip (or the session count) with ElevenLabs.
-      fetch('/api/log').then(response => response.json()).then(async log => {
-        const tip = await fetch('/api/tip?count=' + log.count).then(response => response.json()).then(result => result.tip)
-          .catch(() => `Great work! Practice session ${log.count} is saved.`);
-        new Audio('/api/speak?text=' + encodeURIComponent(tip)).play();
-      }).catch(() => {});
-    });
-
-    async function uploadVideoBlob(videoBlob) {
-      // 1. Create a new FormData instance
-      const formData = new FormData();
-
-      // 2. Append the blob, specifying a filename and MIME type
-      // The third argument ('my-video.webm') is the filename the server will receive
-      const randomNum = Math.floor(Math.random() * 10000);
-      formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
-
-      try {
-          // 3. Send the POST request using fetch
-          const response = await fetch('http://127.0.0.1:5000/upload', {
-          method: 'POST',
-          body: formData,
-          // Note: Do NOT manually set 'Content-Type': 'multipart/form-data'. 
-          // The browser automatically sets this with the correct boundary string.
-          });
-
-          if (!response.ok) {
-          throw new Error(`Server error: ${response.statusText}`);
-          }
-
-          const result = await response.json();
-          console.log('Upload successful:', result);
-          return result;
-
-          } catch (error) {
-              console.error('Failed to upload video:', error);
-          }
-      }
-      
-      // Upload video to server
-      uploadVideo.addEventListener('click', () => {
-        if (mediaRecorder.state !== 'inactive') {
-            // This triggers the 'onstop' event above, which safely builds the blob and uploads
-            mediaRecorder.stop(); 
-        }
-        const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-        uploadVideoBlob(videoBlob)
+    // Start Recording
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        if (!mediaRecorder || mediaRecorder.state === 'recording') return;
+        recordedChunks = [];
+        mediaRecorder.start();
+        startButton.disabled = true;
+        if (stopButton) stopButton.disabled = false;
       });
+    }
 
-      startVideoStream();
+    // End Recording
+    if (stopButton) {
+      stopButton.addEventListener('click', () => {
+        if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+        mediaRecorder.stop();
+        if (startButton) startButton.disabled = false;
+        stopButton.disabled = true;
+      });
+    }
 
-    // --- 3. Song Bar Play / Pause / Progress ---
+    // Prompt if clicked before recording
+    if (downloadButton) {
+      downloadButton.addEventListener('click', (e) => {
+        if (!downloadButton.href || downloadButton.getAttribute('href') === '#') {
+          e.preventDefault();
+          alert('Record a video first using Start/End Recording before downloading!');
+        }
+      });
+    }
+
+    // --- 3. Song Bar Audio Player ---
     const audio = document.getElementById('practiceAudio');
     const noteThumb = document.getElementById('noteThumb');
+    const songTrack = document.getElementById('songTrack');
     const trackProgress = document.getElementById('trackProgress');
     const songTime = document.getElementById('songTime');
+    const songHint = document.querySelector('.song-hint');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSongTitle = urlParams.get('song') || localStorage.getItem('selectedSong') || 'World Is Mine';
+    const currentAudioSrc = urlParams.get('audio') || localStorage.getItem('selectedAudio') || 'audio/world_is_mine.mp3';
+
+    if (audio) {
+      audio.src = currentAudioSrc;
+      audio.load();
+    }
+
+    if (songHint) {
+      songHint.textContent = `${currentSongTitle} — Click note to play`;
+    }
 
     function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-    noteThumb.addEventListener('click', () => {
-      if (!audio.src || isNaN(audio.duration)) {
-        // Toggle visual bounce if no audio source is hooked up
-        noteThumb.classList.toggle('playing');
-        return;
-      }
-      if (audio.paused) {
-        audio.play();
-        noteThumb.classList.add('playing');
-      } else {
-        audio.pause();
-        noteThumb.classList.remove('playing');
-      }
-    });
+    if (audio) {
+      audio.addEventListener('loadedmetadata', () => {
+        if (songTime) {
+          songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
+        }
+      });
 
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration) {
-        const pct = (audio.currentTime / audio.duration) * 100;
-        trackProgress.style.width = pct + '%';
-        noteThumb.style.left = pct + '%';
-        songTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
-      }
-    });
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          const pct = (audio.currentTime / audio.duration) * 100;
+          if (trackProgress) trackProgress.style.width = pct + '%';
+          if (noteThumb) noteThumb.style.left = pct + '%';
+          if (songTime) {
+            songTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+          }
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        if (noteThumb) {
+          noteThumb.classList.remove('playing');
+          noteThumb.style.left = '0%';
+        }
+        if (trackProgress) trackProgress.style.width = '0%';
+        if (songTime) songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
+        if (songHint) songHint.textContent = `${currentSongTitle} — Finished. Click to replay`;
+      });
+    }
+
+    if (noteThumb) {
+      noteThumb.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!audio) return;
+        if (audio.paused) {
+          audio.play().then(() => {
+            noteThumb.classList.add('playing');
+            if (songHint) songHint.textContent = `${currentSongTitle} — Playing`;
+          }).catch(err => console.warn('Audio playback error:', err));
+        } else {
+          audio.pause();
+          noteThumb.classList.remove('playing');
+          if (songHint) songHint.textContent = `${currentSongTitle} — Paused`;
+        }
+      });
+    }
+
+    if (songTrack) {
+      songTrack.addEventListener('click', (e) => {
+        if (e.target.closest('#noteThumb')) return;
+        const rect = songTrack.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const pct = Math.max(0, Math.min(1, clickX / rect.width));
+        if (audio && audio.duration) {
+          audio.currentTime = pct * audio.duration;
+        }
+      });
+    }
   </script>
-  <script src="js/practice-coach.js"></script>
 </body>
 </html>

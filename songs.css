@@ -4,121 +4,410 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Sci Fied";
+  src: url("./fonts/scifie.ttf") format("truetype");
+}
+
+/* Base Reset */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
+/* Custom Cursor */
+*,
+*::before,
+*::after {
+  cursor: url("cursor.cur"), auto !important;
+}
+
+a,
+button,
+input,
+[role="button"],
+*:hover {
+  cursor: url("cursor.cur"), auto !important;
+}
+
 body {
-  display: grid;
   min-height: 100vh;
   margin: 0;
-  padding: 1.5rem;
-  place-items: center;
-  color: #20143d;
-  background: #d9edff url("./images/windows_xp_14.jpg") center / cover fixed;
-  font-family: "Typo Round", "Trebuchet MS", sans-serif;
+  padding: 2rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #0b3b5b;
+  background: #ffffff url("./images/windows_xp_14.jpg") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Typo Round", sans-serif;
+  overflow-x: hidden;
+  position: relative;
 }
 
-button,
-a {
-  font: inherit;
+/* =========================================================
+   FLOATING CLOUDS LAYER
+========================================================= */
+.clouds-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 55vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
 }
 
-button:focus-visible,
-a:focus-visible {
-  outline: 3px solid #171047;
-  outline-offset: 3px;
+.cloud {
+  position: absolute;
+  width: 160px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+  animation: drift linear infinite;
+  will-change: transform;
 }
 
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  width: 70px;
+  height: 70px;
+  top: -35px;
+  left: 25px;
+}
+
+.cloud::after {
+  width: 90px;
+  height: 90px;
+  top: -45px;
+  left: 65px;
+}
+
+.cloud-1 { top: 6%; transform: scale(0.9); opacity: 0.85; animation-duration: 42s; animation-delay: -5s; }
+.cloud-2 { top: 16%; transform: scale(1.3); opacity: 0.95; animation-duration: 32s; animation-delay: -18s; }
+.cloud-3 { top: 28%; transform: scale(0.65); opacity: 0.75; animation-duration: 55s; animation-delay: -28s; }
+.cloud-4 { top: 10%; transform: scale(1.1); opacity: 0.9; animation-duration: 38s; animation-delay: -35s; }
+.cloud-5 { top: 22%; transform: scale(0.8); opacity: 0.8; animation-duration: 48s; animation-delay: -10s; }
+
+@keyframes drift {
+  0% { left: -250px; }
+  100% { left: 100vw; }
+}
+
+/* =========================================================
+   AERO GLASS MAIN CONTAINER
+========================================================= */
 .song-panel {
-  width: min(100%, 650px);
-  padding: clamp(1.25rem, 4vw, 2rem);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 248, 255, 0.9));
-  border: 3px solid #fff;
-  border-radius: 18px;
+  position: relative;
+  z-index: 5;
+  width: min(100%, 640px); /* Slightly refined width for better proportions */
+  margin-right: 220px;     /* Pushes the song panel away from the CD player */
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: 28px;
+ 
+
+  /* Frosted Glass Body */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.5) 45%,
+    rgba(215, 238, 255, 0.45) 50%,
+    rgba(195, 228, 255, 0.75) 100%
+  );
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+
+  /* Glossy Bevel Rim Lighting */
+  border-top: 2px solid rgba(255, 255, 255, 0.95);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid rgba(135, 185, 220, 0.8);
+
   box-shadow:
-    0 0 0 2px rgba(41, 93, 170, 0.55),
-    0 14px 35px rgba(18, 24, 83, 0.35),
-    inset 0 0 0 1px #9ccaff;
+    0 16px 40px rgba(0, 45, 90, 0.22),
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 6px rgba(70, 150, 220, 0.2);
+}
+
+/* Header & Back Link */
+.song-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.heading-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .home-link {
-  display: inline-block;
-  margin-bottom: 0.7rem;
-  color: #393080;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.35rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0b3b5b;
   text-decoration: none;
+  border-radius: 20px;
+
+  /* Mini Aero Pill */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(215, 238, 255, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(135, 185, 220, 0.8);
+  box-shadow: 0 2px 6px rgba(0, 50, 100, 0.1);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .home-link:hover {
-  text-decoration: underline;
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(185, 225, 255, 0.8) 100%);
 }
 
-.coach-start-controls {
-  font-family: "Trebuchet MS", Arial, sans-serif;
+/* Title with 3D Aero Gradient Effect */
+h1#page-title {
+  margin: 0;
+  font-family: "Typo Round", sans-serif;
+  font-size: clamp(2.2rem, 5vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #fbfcfbb7;
+  text-shadow: 
+    0 2px 0 #fbfbfb,
+    0 4px 0 #d1d9de,
+    0 6px 0 #0379c3,
+    0 8px 10px rgba(0, 0, 0, 0.25);
+  text-decoration: none;
 }
 
-.coach-start-controls p {
-  margin: 0.6rem 0 0;
-  color: #514a70;
-  font-size: 0.95rem;
-  line-height: 1.5;
+/* =========================================================
+   CD PLAYER
+========================================================= */
+.cd-player {
+  position: static;
+  width: 220px;
+  flex: 0 0 auto;
+  color: #000000;
 }
 
-h1 {
-  margin: 0 0 0.8rem;
-  color: #28204c;
-  font-family: "Sci Fied", "Typo Round", sans-serif;
-  font-size: clamp(1.8rem, 5vw, 2.4rem);
-  text-decoration: underline;
-  text-decoration-color: #f04ab7;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 5px;
+.cd-player-brand,
+.cd-player-footer,
+.cd-display-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
 }
 
+.cd-player-brand {
+  padding: 2px 3px 6px;
+  text-shadow: 0 1px #fff;
+}
+
+.cd-player-brand span:last-child {
+  padding: 2px 6px;
+  color: #0b3b5b;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #9dc4e4;
+  border-radius: 8px;
+}
+
+.cd-case {
+  position: relative;
+  width: 85%;
+  margin-left: 15%;
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+
+.cd-case::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  background: linear-gradient(135deg, #d8e4e6, #8ba2b3 32%, #d4e2df 70%, #9cb2b8);
+  border: 2px solid #dce7e8;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #657b8c, 0 6px 12px rgba(0, 30, 60, 0.25);
+}
+
+.cd-case::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  content: "";
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, transparent 40%, transparent 65%, rgba(190, 230, 255, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.cd-disc {
+  position: absolute;
+  z-index: 0;
+  top: 5%;
+  left: -24%;
+  display: block;
+  visibility: hidden;
+  width: 90%;
+  height: auto;
+  filter: drop-shadow(0 3px 5px rgba(0, 30, 60, 0.35));
+  animation: cd-spin 4s linear infinite;
+  animation-play-state: paused;
+}
+
+.cd-player.is-playing .cd-disc {
+  visibility: visible;
+  animation-play-state: running;
+}
+
+.cd-cover {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  right: 4px;
+  width: calc(100% - 19px);
+  height: calc(100% - 8px);
+  object-fit: cover;
+  border: 1px solid #738a9d;
+  border-radius: 3px;
+}
+
+.cd-hinge {
+  position: absolute;
+  z-index: 4;
+  top: 4px;
+  bottom: 4px;
+  left: 3px;
+  width: 12px;
+  background: linear-gradient(90deg, #354752ad, #efffff66, #455b67ad);
+  border: 1px solid #d3e1e3;
+  border-radius: 3px;
+}
+
+.cd-display {
+  margin-top: 30px; /* Increased from 10px for a bigger gap */
+  padding: 8px 10px;
+  color: #053b58;
+  background: linear-gradient(#c8eff7, #defaf7);
+  border: 1px solid #82b6cc;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(40, 90, 130, 0.25), 0 1px 0 #fff;
+}
+
+.cd-display-status {
+  justify-content: flex-start;
+  font-size: 8px;
+}
+
+.cd-format {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.cd-led {
+  width: 6px;
+  height: 6px;
+  background: #8b9eac;
+  border-radius: 50%;
+}
+
+.cd-player.is-playing .cd-led {
+  background: #02c39a;
+  box-shadow: 0 0 6px #02c39a;
+}
+
+.cd-display p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cd-player-footer {
+  padding: 8px 3px 2px;
+  font-size: 7px;
+}
+
+.cd-speaker {
+  width: 43px;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, #8ba8bf 0 2px, transparent 2px 5px);
+  border-radius: 5px;
+}
+
+@keyframes cd-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================================
+   SONG LIST CARDS
+========================================================= */
 .song-list {
-  border-top: 2px solid #8b8bb4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
 }
 
 .song-row {
   display: flex;
-  min-height: 82px;
-  justify-content: space-between;
+  min-height: 76px;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.55rem 0.25rem;
-  border-bottom: 2px solid #8b8bb4;
-  transition: background 150ms ease;
+  padding: 0.6rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 10px rgba(0, 40, 80, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .song-row:hover,
 .song-row:focus-within {
-  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(215, 240, 255, 0.7) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 80, 160, 0.16);
+  border-color: #ffffff;
 }
 
-.song-world:hover,
-.song-world:focus-within {
-  background: rgba(139, 217, 255, 0.34);
-}
-
-.song-shake:hover,
-.song-shake:focus-within {
-  background: rgba(255, 190, 222, 0.38);
-}
-
-.song-tell:hover,
-.song-tell:focus-within {
-  background: rgba(174, 246, 218, 0.38);
+/* Selected row highlighted with aqua border and glow */
+.song-row.selected {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(195, 235, 255, 0.7) 100%
+  );
+  border: 1.5px solid #3ab4e8;
+  box-shadow:
+    0 6px 16px rgba(0, 120, 215, 0.25),
+    inset 0 1px 1px #fff;
 }
 
 .song-select {
   display: flex;
-  min-width: 0;
-  flex: 1;
+  width: 100%;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
   padding: 0;
-  color: inherit;
+  color: #0b3b5b;
   text-align: left;
   background: transparent;
   border: 0;
@@ -126,98 +415,199 @@ h1 {
 }
 
 .album-art {
-  display: block;
   width: 54px;
   height: 54px;
   flex: 0 0 54px;
   object-fit: cover;
   border: 2px solid #fff;
-  border-radius: 10px;
-  box-shadow: 0 1px 5px rgba(37, 35, 87, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 40, 90, 0.2);
 }
 
 .song-name {
-  display: grid;
-  gap: 0.1rem;
-  font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  font-size: 1.2rem;
   font-weight: 700;
+  color: #0b3b5b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .song-name small {
-  color: #595477;
-  font-size: 0.8rem;
-  font-weight: 400;
+  color: #4b6b85;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
+/* =========================================================
+   VOICE COACH PANEL & AERO BUTTON
+========================================================= */
 .voice-coach {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.15rem 1.4rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(220, 242, 255, 0.55) 100%);
+  border-top: 1.5px solid #ffffff;
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.6);
+  box-shadow: 0 6px 14px rgba(0, 50, 100, 0.08), inset 0 1px 1px #fff;
+  margin-bottom: 1.5rem;
+}
+
+.coach-start-controls {
+  display: flex;
+  align-items: center;
   gap: 1rem;
-  margin-top: 2rem;
-  padding: 1.25rem;
-  font-family: "Trebuchet MS", Arial, sans-serif;
-  line-height: 1.55;
-  background: rgba(230, 244, 255, 0.78);
-  border: 1px solid #a8a5cb;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  flex-wrap: wrap;
 }
 
-.coach-copy {
-  min-width: 0;
+.coach-start-controls p {
+  color: #4b6b85;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
-.coach-copy p {
-  margin: 0.65rem 0 0;
-  color: #514a70;
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
-}
-
-.coach-transcript:not(:empty) {
-  color: #30265e;
-  font-style: italic;
-}
-
+/* Frutiger Aero Voice Coach Pill Button */
 .coach-button {
-  flex: 0 0 auto;
-  padding: 0.5rem 0.8rem;
-  color: #30265e;
-  background: linear-gradient(#fff, #e9ddff);
-  border: 2px solid #62518f;
-  border-radius: 999px;
-  box-shadow: 0 2px 0 rgba(36, 30, 82, 0.2);
-  cursor: pointer;
+  padding: 0.65rem 1.35rem;
+  font-family: inherit;
+  font-size: 1rem;
   font-weight: 700;
+  color: #0b3b5b;
+  border-radius: 30px;
+  cursor: pointer;
+  border-top: 1.5px solid #fff;
+  border-left: 1px solid rgba(255, 255, 255, 0.7);
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.7);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(225, 245, 255, 0.6) 48%,
+    rgba(168, 225, 255, 0.6) 52%,
+    rgba(140, 215, 255, 0.8) 100%
+  );
+  box-shadow: 0 4px 10px rgba(0, 70, 130, 0.15), inset 0 1px 1px #fff;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .coach-button:hover {
-  background: linear-gradient(#fff, #cffff1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 120, 215, 0.25);
 }
 
+.coach-copy p {
+  font-family: sans-serif;
+  font-size: 0.92rem;
+  color: #3b5b75;
+  line-height: 1.45;
+}
+
+.coach-transcript:not(:empty) {
+  color: #06406b;
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* =========================================================
+   BIG "DANCE" CTA BUTTON (Matches .btn-ready from home)
+========================================================= */
+.dance-button {
+  display: block;
+  width: 100%;
+  padding: 1.1rem 2rem;
+  margin: 0 auto 0.75rem;
+  font-family: "Sci Fied", "Typo Round", sans-serif;
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #0b3b5b;
+  text-align: center;
+  border-radius: 40px;
+  cursor: pointer;
+  user-select: none;
+
+  /* Frosted Aero Glass Gradient */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(215, 238, 255, 0.45) 50%,
+    rgba(180, 225, 255, 0.75) 100%
+  );
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+
+  border-top: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.7);
+
+  box-shadow:
+    0 8px 22px rgba(0, 70, 130, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(70, 150, 220, 0.25);
+
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dance-button:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(235, 250, 255, 0.7) 48%,
+    rgba(168, 225, 255, 0.7) 52%,
+    rgba(120, 205, 255, 0.9) 100%
+  );
+  color: #032d47;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow:
+    0 12px 28px rgba(0, 120, 215, 0.3),
+    0 0 16px rgba(120, 215, 255, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+}
+
+.dance-button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #4b6b85;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* =========================================================
+   VOICE WAVE POPUP (Mic Active)
+========================================================= */
 .voice-wave {
   position: fixed;
-  z-index: 10;
-  bottom: 1.1rem;
-  left: 1.1rem;
+  z-index: 20;
+  bottom: 1.5rem;
+  left: 1.5rem;
   display: flex;
-  width: min(290px, calc(100vw - 2.2rem));
-  height: 68px;
+  width: min(290px, calc(100vw - 3rem));
+  height: 64px;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0 0.85rem;
+  gap: 0.75rem;
+  padding: 0 1rem;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(234, 249, 255, 0.94) 48%, rgba(255, 235, 251, 0.94));
-  border: 2px solid #fff;
-  border-radius: 17px;
-  box-shadow:
-    0 0 0 1px rgba(101, 124, 191, 0.72),
-    0 0 0 4px rgba(191, 223, 255, 0.52),
-    0 8px 25px rgba(42, 38, 99, 0.28),
-    inset 0 0 0 1px rgba(192, 160, 255, 0.46);
+  border-radius: 20px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(215, 240, 255, 0.85) 100%
+  );
+  backdrop-filter: blur(12px);
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 45, 90, 0.25);
   animation: wave-pop 180ms ease-out both;
 }
 
@@ -227,17 +617,18 @@ h1 {
 
 .wave-label {
   flex: 0 0 auto;
-  color: #514579;
-  font-family: "Sci Fied", "Typo Round", sans-serif;
-  font-size: 0.68rem;
-  letter-spacing: 0.07em;
+  color: #0b3b5b;
+  font-family: "Sci Fied", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-shadow: 0 1px #fff;
 }
 
 .wave-bars {
   display: flex;
   min-width: 0;
-  height: 42px;
+  height: 40px;
   flex: 1;
   align-items: center;
   justify-content: space-between;
@@ -248,10 +639,9 @@ h1 {
   width: 3px;
   min-width: 2px;
   height: 5px;
-  background: linear-gradient(180deg, #f05dc5 0%, #8263dc 48%, #39bfe1 100%);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: linear-gradient(180deg, #3ab4e8 0%, #0575b3 100%);
   border-radius: 99px;
-  box-shadow: 0 0 5px rgba(180, 105, 228, 0.5);
+  box-shadow: 0 0 4px rgba(58, 180, 232, 0.6);
   transition: height 55ms linear;
 }
 
@@ -261,109 +651,38 @@ h1 {
   left: -55%;
   width: 35%;
   height: 150px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.58), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
   pointer-events: none;
   transform: rotate(24deg);
   animation: wave-glint 2.4s ease-in-out infinite;
 }
 
 @keyframes wave-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes wave-glint {
-  0%, 25% {
-    left: -55%;
+  0%, 25% { left: -55%; }
+  75%, 100% { left: 125%; }
+}
+
+/* =========================================================
+   RESPONSIVE ADJUSTMENTS
+========================================================= */
+@media (max-width: 1260px) {
+  .song-panel {
+    margin-right: 0;       /* Centers the panel normally on narrower screens */
+    width: min(100%, 640px);
   }
-  75%, 100% {
-    left: 125%;
+
+  .cd-player {
+    position: static;      /* Stacks gracefully above the panel if the screen is too narrow */
+    margin: 0 auto 1.5rem auto;
+    width: 250px;
   }
-}
 
-.dance-button {
-  border: 2px solid #423579;
-  cursor: pointer;
-  font-weight: 700;
-  box-shadow: 0 2px 0 rgba(36, 30, 82, 0.2);
-}
-
-.dance-button {
-  display: block;
-  min-width: 130px;
-  margin: 1.5rem auto 0.25rem;
-  padding: 0.55rem 1.1rem;
-  color: #271745;
-  background: linear-gradient(180deg, #fff, #d9faff 48%, #efc9ff);
-  border-color: #49387d;
-  border-radius: 10px;
-  box-shadow: 0 3px 0 #aaa3cf, 0 0 12px rgba(255, 115, 216, 0.4);
-  font-family: "Sci Fied", "Typo Round", sans-serif;
-  font-size: 1.35rem;
-  letter-spacing: 0.04em;
-}
-
-.dance-button:hover {
-  background: linear-gradient(180deg, #fff, #ffc9ee);
-}
-
-.status {
-  min-height: 1.2em;
-  margin: 0;
-  color: #423579;
-  text-align: center;
-  font-size: 0.82rem;
-}
-
-@media (max-width: 420px) {
   body {
-    padding: 0.75rem;
-  }
-
-  .song-row {
-    min-height: 74px;
-  }
-
-  .album-art {
-    width: 46px;
-    height: 46px;
-    flex-basis: 46px;
-  }
-
-  .song-name {
-    font-size: 1rem;
-  }
-
-  .song-name small {
-    font-size: 0.72rem;
-  }
-
-  .voice-coach {
-    align-items: stretch;
     flex-direction: column;
-  }
-
-  .voice-wave {
-    bottom: 0.75rem;
-    left: 0.75rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .wave-glint {
-    animation: none;
   }
 }
