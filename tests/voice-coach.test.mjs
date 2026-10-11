@@ -131,7 +131,7 @@ test('song page actions use actual buttons, validate titles, and defer navigatio
   assert.equal(vm.runInContext("handleCoachAction('select_song', {title:'Shake It Off'}).selectedSong", context), 'Shake It Off');
   assert.match(vm.runInContext("handleCoachAction('select_song', {title:'unknown'}).error", context), /not on/);
   assert.equal(vm.runInContext("handleCoachAction('dance', {}).dancePageReady", context), false);
-  assert.match(elements.get('status').textContent, /Shake It Off selected. Dance mode is not connected/);
+  assert.equal(context.window.location.href, 'practice.html');
   vm.runInContext("handleCoachAction('go_home', {}).deferred()", context);
   assert.equal(context.window.location.href, 'StepDanceHome.html');
   assert.match(setup.systemInstruction.parts[0].text, /do you want me to read the songs/);
