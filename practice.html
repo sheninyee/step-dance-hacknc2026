@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="window-controls">
-        <a id="download-link" download="recorded-video.webm" class="aero-btn">Download Video</a>
+        <a id="upload-button" download="recorded-video.webm" class="aero-btn">Upload Video</a>
       </div>
     </div>
   </main>
@@ -97,7 +97,7 @@
     const startButton = document.getElementById('start-btn');
     const stopButton = document.getElementById('stop-btn');
     const recordedVideoElement = document.getElementById('recorded-video');
-    const downloadLink = document.getElementById('download-link');
+    const uploadVideo = document.getElementById('upload-button');
 
     let mediaRecorder;
     let recordedChunks = [];
@@ -115,9 +115,10 @@
           }
         };
 
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, { type: 'video/webm' });
-          const videoURL = URL.createObjectURL(blob);
+        mediaRecorder.onstop = async () => {
+          const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+          await uploadVideoBlob(videoBlob);
+          const videoURL = URL.createObjectURL(videoBlob);
           recordedVideoElement.src = videoURL;
           downloadLink.href = videoURL;
         };
@@ -141,7 +142,48 @@
       stopButton.disabled = true;
     });
 
-    startVideoStream();
+    async function uploadVideoBlob(videoBlob) {
+      // 1. Create a new FormData instance
+      const formData = new FormData();
+
+      // 2. Append the blob, specifying a filename and MIME type
+      // The third argument ('my-video.webm') is the filename the server will receive
+      const randomNum = Math.floor(Math.random() * 10000);
+      formData.append('video', videoBlob, `my-video-${randomNum}.webm`);
+
+      try {
+          // 3. Send the POST request using fetch
+          const response = await fetch('http://127.0.0.1:5000/upload', {
+          method: 'POST',
+          body: formData,
+          // Note: Do NOT manually set 'Content-Type': 'multipart/form-data'. 
+          // The browser automatically sets this with the correct boundary string.
+          });
+
+          if (!response.ok) {
+          throw new Error(`Server error: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          console.log('Upload successful:', result);
+          return result;
+
+          } catch (error) {
+              console.error('Failed to upload video:', error);
+          }
+      }
+      
+      // Upload video to server
+      uploadVideo.addEventListener('click', () => {
+        if (mediaRecorder.state !== 'inactive') {
+            // This triggers the 'onstop' event above, which safely builds the blob and uploads
+            mediaRecorder.stop(); 
+        }
+        const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        uploadVideoBlob(videoBlob)
+      });
+
+      startVideoStream();
 
     // --- 3. Song Bar Play / Pause / Progress ---
     const audio = document.getElementById('practiceAudio');
