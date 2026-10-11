@@ -1,4 +1,4 @@
-# Step Dance — Gemini voice coach (song page / part 5)
+I am # Step Dance — Gemini voice coach (song page / part 5)
 
 The song page uses Gemini Live for **audio understanding, transcription, conversation, and generated speech**. Browser `SpeechRecognition` is not used. Gemini Live supplies conversational speech; browser speech synthesis is a fallback only for the mandatory dance question if Gemini TTS is unavailable. The default model is `gemini-3.8-live`, with the **Kore** voice and an enthusiastic, patient dance coach instruction. The model can be overridden in `.env` if your Gemini project uses a different Live audio model. After selection, the client checks the actual generated transcript for “Do you want to dance to it?”. If Live omitted it, the page plays that exact line using a cached Kore recording from `gemini-3.8-flash-tts` (configurable via `GEMINI_TTS_MODEL`); browser speech synthesis handles unavailable TTS access. The question is added to Live conversation history so subsequent yes/no answers refer to dancing.
 
