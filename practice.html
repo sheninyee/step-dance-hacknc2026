@@ -1,28 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="readAloud.js" defer></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Step Dance – Learn</title>
-    <link rel="stylesheet" href="learn.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step Practice</title>
+  <link rel="stylesheet" href="practice.css" />
+  <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/372.gif" type="image/x-icon">
 </head>
 <body>
-    <header class="nav">
-        <a class="logo" href="index.html">StepSense</a>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="learn.html">Learn</a>
-            <a href="practice.html" class="active" aria-current="page">Practice</a>
-            <a href="settings.html">Settings</a>
-        </nav>
-    </header>
-    <main class="stage" id="stage">
-       <video id="camera" autoplay playsinline muted></video>
-        <canvas id="overlay"></canvas>
-    </main>
-    <button id="startButton">Start camera</button>
-    <!--div style="background-color: #0000FF; padding: 15px; border-radius: 16px; display: inline-block; width: 100%;"-->
-    <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2x7MyWybabEz6Y6wvHuwGE?utm_source=generator&theme=0&si=27a97933a42f4f2f" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-    <!--/div-->
+
+  <!-- Top Header Area -->
+  <header class="top-bar">
+    <!-- Floating Logo -->
+    <h1 class="logo-title" id="logoText">STEP DANCE</h1>
+
+    <!-- Top Right Settings with Solar Flare -->
+    <div class="settings-wrapper">
+      <img src="images/solarflare.png" alt="" class="solar-flare" aria-hidden="true" />
+      <a href="settings.html" class="settings-link" title="Settings">
+        <span class="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span class="settings-label">Settings</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Interactive Song Progress Bar -->
+  <section class="song-bar-container">
+    <div class="song-track" id="songTrack">
+      <div class="track-line"></div>
+      <div class="track-progress" id="trackProgress"></div>
+      <button class="note-thumb" id="noteThumb" aria-label="Toggle Play/Pause">
+        <img src="images/note.png" alt="Note" class="note-img" />
+      </button>
+    </div>
+    <div class="song-info">
+      <span class="song-hint">Click note to play / pause</span>
+      <span class="song-time" id="songTime">0:00 / 2:45</span>
+    </div>
+    <!-- Hidden or optional audio element for the track -->
+    <audio id="practiceAudio" src="audio/song.mp3" preload="metadata"></audio>
+  </section>
+
+  <!-- Two Windows: Live Webcam & Recorded Playback -->
+  <main class="windows-grid">
+    <!-- Left: Live Recording Window -->
+    <div class="window-column">
+      <div class="xp-window">
+        <img src="images/frame.png" alt="" class="window-frame-bg" />
+        <div class="window-inner">
+          <video id="video" autoplay playsinline muted></video>
+        </div>
+      </div>
+      <div class="window-controls">
+        <button id="start-btn" class="aero-btn">Start Recording</button>
+        <button id="stop-btn" class="aero-btn" disabled>End Recording</button>
+      </div>
+    </div>
+
+    <!-- Right: Recorded Playback Window -->
+    <div class="window-column">
+      <div class="xp-window">
+        <img src="images/frame.png" alt="" class="window-frame-bg" />
+        <div class="window-inner">
+          <video id="recorded-video" controls playsinline></video>
+        </div>
+      </div>
+      <div class="window-controls">
+        <a id="upload-button" download="recorded-video.mp4" class="aero-btn">Upload Video</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom AI Feedback Panel & Flourish -->
+  <footer class="bottom-area">
+    <img src="images/vector.png" alt="" class="vector-accent" aria-hidden="true" />
+    <div class="feedback-panel">
+      <p class="feedback-text">temporary Placeholder 4 AI Feedback</p>
+    </div>
+  </footer>
+
+  <script>
+    // --- 1. Float Letter Effect on Logo ---
+    const logo = document.getElementById('logoText');
+    if (logo) {
+      logo.innerHTML = [...logo.textContent]
+        .map((char, i) => `<span class="char" style="--char-index:${i}">${char === ' ' ? '&nbsp;' : char}</span>`)
+        .join('');
+    }
+
+    // --- 2. Webcam Stream & Recording Logic ---
+    const videoElement = document.getElementById('video');
+    const startButton = document.getElementById('start-btn');
+    const stopButton = document.getElementById('stop-btn');
+    const recordedVideoElement = document.getElementById('recorded-video');
+    const uploadVideo = document.getElementById('upload-button');
+
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    async function startVideoStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        videoElement.srcObject = stream;
+
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+          const videoURL = URL.createObjectURL(videoBlob);
+          recordedVideoElement.src = videoURL;
+          downloadLink.href = videoURL;
+        };
+      } catch (err) {
+        console.warn('Camera access denied or unavailable:', err);
+      }
+    }
+
+    startButton.addEventListener('click', () => {
+      if (!mediaRecorder) return;
+      recordedChunks = [];
+      mediaRecorder.start();
+      startButton.disabled = true;
+      stopButton.disabled = false;
+    });
+
+    stopButton.addEventListener('click', () => {
+      if (!mediaRecorder) return;
+      mediaRecorder.stop();
+      startButton.disabled = false;
+      stopButton.disabled = true;
+      // Log the session in Tiger Data, then speak a Snowflake Cortex tip (or the session count) with ElevenLabs.
+      fetch('/api/log').then(response => response.json()).then(async log => {
+        const tip = await fetch('/api/tip?count=' + log.count).then(response => response.json()).then(result => result.tip)
+          .catch(() => `Great work! Practice session ${log.count} is saved.`);
+        new Audio('/api/speak?text=' + encodeURIComponent(tip)).play();
+      }).catch(() => {});
+    });
+
+    async function uploadVideoBlob(videoBlob) {
+      // 1. Create a new FormData instance
+      const formData = new FormData();
+
+      // 2. Append the blob, specifying a filename and MIME type
+      // The third argument ('my-video.webm') is the filename the server will receive
+      const randomNum = Math.floor(Math.random() * 10000);
+      formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
+
+      try {
+          // 3. Send the POST request using fetch
+          const response = await fetch('http://127.0.0.1:5000/upload', {
+          method: 'POST',
+          body: formData,
+          // Note: Do NOT manually set 'Content-Type': 'multipart/form-data'. 
+          // The browser automatically sets this with the correct boundary string.
+          });
+
+          if (!response.ok) {
+          throw new Error(`Server error: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          console.log('Upload successful:', result);
+          return result;
+
+          } catch (error) {
+              console.error('Failed to upload video:', error);
+          }
+      }
+      
+      // Upload video to server
+      uploadVideo.addEventListener('click', () => {
+        if (mediaRecorder.state !== 'inactive') {
+            // This triggers the 'onstop' event above, which safely builds the blob and uploads
+            mediaRecorder.stop(); 
+        }
+        const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+        uploadVideoBlob(videoBlob)
+      });
+
+      startVideoStream();
+
+    // --- 3. Song Bar Play / Pause / Progress ---
+    const audio = document.getElementById('practiceAudio');
+    const noteThumb = document.getElementById('noteThumb');
+    const trackProgress = document.getElementById('trackProgress');
+    const songTime = document.getElementById('songTime');
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    noteThumb.addEventListener('click', () => {
+      if (!audio.src || isNaN(audio.duration)) {
+        // Toggle visual bounce if no audio source is hooked up
+        noteThumb.classList.toggle('playing');
+        return;
+      }
+      if (audio.paused) {
+        audio.play();
+        noteThumb.classList.add('playing');
+      } else {
+        audio.pause();
+        noteThumb.classList.remove('playing');
+      }
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        trackProgress.style.width = pct + '%';
+        noteThumb.style.left = pct + '%';
+        songTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+      }
+    });
+  </script>
 </body>
+</html>

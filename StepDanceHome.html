@@ -29,6 +29,7 @@
     </script>
   <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/331.gif" type="image/x-icon">
   <link rel="stylesheet" href="style.css" />
+  <script src="js/home-coach-startup.js" type="module"></script>
 </head>
 <body>
   <!-- Floating Clouds Layer -->
@@ -45,9 +46,9 @@
     <div class="nav-container">
       <a href="https://hacknc.com/" class="hackathon-name">HACKNC2026</a>
       <nav class="nav-links">
-        <a href="#link1">home </a>
-        <a href="#link2">learn </a>
-        <a href="#link3">settings</a>
+        <a href="songs.html">songlist </a>
+        <a href="practice.html">learn </a>
+        <a href="settings.html">settings</a>
       </nav>
     </div>
   </header>
@@ -56,8 +57,12 @@
   <main class="logo">
     <div class="logo-container">
       <div class="content-left">
+        <div class="home-coach-start">
+          <button id="home-coach-button" type="button" aria-keyshortcuts="Space" aria-describedby="home-coach-hint">Start voice coach</button>
+          <p id="home-coach-hint">Press space bar to start the voice coach</p>
+        </div>
         <!-- Main Logo / Big Title -->
-        <h1 class="logo-text">STEP DANCE</h1>
+        <h1 class="logo-text logo-text--float">STEP DANCE</h1>
 
         <!-- Subheading -->
         <h2 class="subheading">Your premier site for dance practice with audio feedback and instructions!</h2>
@@ -66,7 +71,7 @@
         
 
         <!-- Wide "Ready" Button -->
-        <button class="btn-ready">ready (>.<) </button>
+        <button class="btn-ready" onclick="window.location.href='songs.html'">ready (>u<) </button>
 
         <!-- Three Bottom Text Cards / Buttons -->
       </div>
@@ -77,6 +82,13 @@
       </div>
     </div>
   </main>
+  <!-- Moving Fish Layer (Bottom) -->
+  <div class="fish-container" aria-hidden="true">
+    <img src="images/fish1.png" alt="fish" class="fish fish-1" />
+    <img src="images/fish2.png" alt="fish" class="fish fish-2" />
+    <img src="images/fish3.png" alt="fish" class="fish fish-3" />
+  </div>
+
 <canvas id="bubble-canvas"></canvas>
   <script src="js/script.js"></script>
 </body>

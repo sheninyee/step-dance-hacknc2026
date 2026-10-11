@@ -8,13 +8,20 @@
     src: url("./fonts/scifie.ttf") format("truetype");
 }
 
+@font-face {
+    font-family: "Nintendo";
+    src: url("./fonts/NintendBoldRM8E.ttf") format("truetype");
+}
+
 /* Base Reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
+@view-transition {
+  navigation: auto;
+}
 body {
   font-family: "Typo Round", sans-serif, "Sci Fied";
   color: #fdfffc;
@@ -55,7 +62,7 @@ body {
 .nav-links a {
   text-decoration: none;
   color: #000000;
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 500;
   transition: color 0.2s ease;
 }
@@ -67,6 +74,7 @@ body {
 /* Main Layout */
 .logo {
 font-family: "Typo Round", sans-serif;
+color: #fbf9f9;
   min-height: calc(100vh - 75px);
   padding: 4rem 2rem;
   display: flex;
@@ -89,13 +97,61 @@ font-family: "Typo Round", sans-serif;
   flex-direction: column;
 }
 
+
 .logo-text {
   font-size: 5rem;
   font-weight: 900;
   line-height: 1;
   letter-spacing: 2px;
   margin-bottom: 1.25rem;
-  color: #111;
+  color: #fcfbfbb7;
+  text-shadow: 
+    0 2px 0 #0379c3,
+    0 4px 0 #d1d9de,
+    0 6px 0 #0379c3,
+    0 8px 0 #0379c3,
+    0 10px 10px rgba(0, 0, 0, 0.3),
+    0 15px 20px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  perspective: 1000px;
+}
+
+/* Individual character animation properties */
+.logo-text .char {
+  display: inline-block;
+  position: relative;
+  transform-origin: 50% 100%;
+  animation-duration: 2200ms;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+  animation-delay: calc(var(--char-index, 0) * -0.5s);
+  animation-name: float;
+}
+
+/* Alternating letters float in opposite directions */
+.logo-text .char:nth-child(2n) {
+  animation-name: float-alt;
+}
+
+/* Float Keyframes */
+@keyframes float {
+  from {
+    transform: translate(2%, -10%) rotate(-1deg);
+  }
+  to {
+    transform: translate(-2%, 5%) rotate(3deg);
+  }
+}
+
+@keyframes float-alt {
+  from {
+    transform: translate(0%, -5%) rotate(-1deg);
+  }
+  to {
+    transform: translate(2%, 10%) rotate(3deg);
+  }
 }
 
 .subheading {
@@ -103,7 +159,7 @@ font-family: "Typo Round", sans-serif;
   font-weight: 600;
   line-height: 1.3;
   margin-bottom: 1rem;
-  color: #222;
+  color: #3c3548;
 }
 
 .description {
@@ -113,27 +169,73 @@ font-family: "Typo Round", sans-serif;
 }
 
 /* Wide Action Button */
+/* Frutiger Aero Glass Button */
+
 .btn-ready {
   width: 100%;
   padding: 1rem 1.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  background-color: #fdfcfcc3;
-  color: #454444;
-  border: 2px solid #a7a5a9;
-  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0b3b5b;
+  text-align: center;
+  border-radius: 40px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
   margin-bottom: 1.5rem;
+
+  /* Frosted aero glass gradient */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.45) 45%,
+    rgba(215, 238, 255, 0.35) 50%,
+    rgba(195, 228, 255, 0.6) 100%
+  );
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+
+  /* Top highlight and bottom bevel */
+  border-top: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.6);
+
+  box-shadow: 
+    0 6px 16px rgba(0, 60, 110, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 4px rgba(70, 150, 220, 0.2);
+
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-ready:hover {
-  background-color: #d9dbec;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(235, 250, 255, 0.6) 48%,
+    rgba(168, 225, 255, 0.6) 52%,
+    rgba(120, 205, 255, 0.8) 100%
+  );
+  color: #032d47;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 10px 22px rgba(0, 120, 215, 0.25),
+    0 0 15px rgba(120, 215, 255, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
 }
 
 .btn-ready:active {
-  transform: scale(0.99);
+  transform: translateY(1px) scale(0.99);
+}
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
 }
 
 /* 3 Text Boxes / Cards */
@@ -294,6 +396,33 @@ select,
   animation-delay: -10s;
 }
 
+.home-coach-start {
+  margin-bottom: 1.5rem;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+.home-coach-start button {
+  padding: 0.55rem 0.9rem;
+  color: #30265e;
+  font: inherit;
+  font-weight: 700;
+  background: linear-gradient(#fff, #e9ddff);
+  border: 2px solid #62518f;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.home-coach-start button:focus-visible {
+  outline: 3px solid #171047;
+  outline-offset: 3px;
+}
+
+.home-coach-start p {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 /* Animation keyframe: drift across screen horizontally */
 @keyframes drift {
   0% {
@@ -303,3 +432,74 @@ select,
     left: 100vw;
   }
 }
+
+/* Container pinned to the bottom of the screen */
+.fish-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 160px; /* Adjust height to fit the bottom area */
+  overflow: hidden;
+  pointer-events: none; /* Keeps buttons and links interactive */
+  z-index: 1; /* Sits behind text/buttons, in front of background */
+}
+
+/* Base fish styling */
+.fish {
+  position: absolute;
+  width: auto;
+  animation: swim-left linear infinite;
+  will-change: transform;
+  user-select: none;
+}
+
+/* Fish 1: larger, swims near the very bottom */
+.fish-1 {
+  height: 60px;
+  bottom: 15px;
+  animation-duration: 22s;
+  animation-delay: 0s;
+}
+
+/* Fish 2: smaller, swims slightly higher and faster */
+.fish-2 {
+  height: 40px;
+  bottom: 65px;
+  animation-duration: 16s;
+  animation-delay: -7s;
+}
+
+/* Fish 3: medium, floats mid-layer */
+.fish-3 {
+  height: 50px;
+  bottom: 35px;
+  animation-duration: 28s;
+  animation-delay: -14s;
+}
+
+/* Right-to-left swimming animation with a slight vertical bob */
+@keyframes swim-left {
+  0% {
+    transform: translateX(100vw) translateY(0px);
+  }
+  50% {
+    transform: translateX(50vw) translateY(-8px);
+  }
+  100% {
+    transform: translateX(-150px) translateY(0px);
+  }
+}
+
+  .char {
+    --name: float;
+    --dur: 2200ms;
+    --del: calc(var(--char-index) * -0.5s);
+    --tf: ease-in-out; 
+    --dir: alternate;
+    
+    &:nth-child(2n) {
+      --name: float-alt;
+    }
+  }
+  

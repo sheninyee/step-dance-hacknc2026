@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Song List | Step Dance</title>
+  <link rel="stylesheet" href="songs.css">
+  <script src="js/songs.js" type="module"></script>
+</head>
+<body>
+  <main class="song-panel" aria-labelledby="page-title">
+    <a class="home-link" href="StepDanceHome.html">← Step Dance</a>
+    <h1 id="page-title">Songs List</h1>
+
+    <section class="song-list" aria-label="Choose a song">
+      <article class="song-row selected song-world" data-song="World Is Mine" data-artist="ryo (supercell)" data-preview="audio/world_is_mine.mp3">
+        <button class="song-select" type="button" aria-pressed="true">
+          <img class="album-art" src="images/world_is_mine.webp" alt="">
+          <span class="song-name">World Is Mine <small>Hatsune Miku · ryo</small></span>
+        </button>
+      </article>
+      <article class="song-row song-shake" data-song="Shake It Off" data-artist="Taylor Swift" data-preview="audio/shake_it_off.mp3">
+        <button class="song-select" type="button" aria-pressed="false">
+          <img class="album-art" src="images/shake_it_off.jpeg" alt="">
+          <span class="song-name">Shake It Off <small>Taylor Swift</small></span>
+        </button>
+      </article>
+      <article class="song-row song-tell" data-song="Tell Your World" data-artist="livetune" data-preview="audio/tell_your_world.mp3">
+        <button class="song-select" type="button" aria-pressed="false">
+          <img class="album-art" src="images/tell_your_world.jpg" alt="">
+          <span class="song-name">Tell Your World <small>Hatsune Miku · livetune</small></span>
+        </button>
+      </article>
+    </section>
+
+    <section class="voice-coach" aria-label="Coach conversation">
+      <div class="coach-start-controls">
+        <button class="coach-button" id="coach-button" type="button" aria-pressed="false" aria-keyshortcuts="Space" aria-describedby="coach-start-hint">Start voice coach</button>
+        <p id="coach-start-hint">Press space bar to start the voice coach</p>
+      </div>
+      <div class="coach-copy">
+        <p id="coach-status" role="status" aria-live="polite">Press Space or select Start voice coach to begin. Your microphone audio is sent to Google while the coach is on.</p>
+        <p class="coach-transcript" id="coach-transcript" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <button class="dance-button" id="dance-button" type="button">DANCE</button>
+    <p class="status" id="status" role="status" aria-live="polite">Hover over a song to hear a preview</p>
+  </main>
+  <audio id="preview-player" preload="none" aria-hidden="true"></audio>
+  <aside class="voice-wave" id="voice-wave" aria-hidden="true" hidden>
+    <span class="wave-label">MIC LIVE</span>
+    <div class="wave-bars" id="wave-bars"></div>
+    <span class="wave-glint" aria-hidden="true"></span>
+  </aside>
+</body>
+</html>
