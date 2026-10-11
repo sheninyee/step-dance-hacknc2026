@@ -1,0 +1,81 @@
+.page-coach-panel {
+  position: fixed;
+  z-index: 10000;
+  right: 1rem;
+  bottom: 1rem;
+  width: min(340px, calc(100vw - 2rem));
+  padding: 1rem;
+  color: #30265e;
+  background: linear-gradient(135deg, #ffffffed, #eaf9fff2, #ffebfbef);
+  border: 2px solid #fff;
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px #a8a5cb, 0 7px 20px #2a266345;
+  font: 14px/1.5 "Trebuchet MS", Arial, sans-serif;
+}
+.page-coach-panel button {
+  padding: .5rem .8rem;
+  font: inherit;
+  font-weight: 700;
+  color: #30265e;
+  background: linear-gradient(#fff, #e9ddff);
+  border: 2px solid #62518f;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.page-coach-panel p, .home-coach-panel .page-coach-status, .home-coach-panel .page-coach-transcript {
+  margin: .65rem 0 0;
+  color: #30265e;
+  font: 14px/1.5 "Trebuchet MS", Arial, sans-serif;
+  overflow-wrap: anywhere;
+}
+.page-coach-transcript { max-height: 100px; overflow-y: auto; }
+.page-coach-panel button:focus-visible { outline: 3px solid #171047; outline-offset: 3px; }
+.home-coach-panel { margin-bottom: 1.5rem; }
+.voice-wave {
+  position: fixed;
+  z-index: 10000;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: min(290px, calc(100vw - 2rem));
+  height: 68px;
+  padding: 0 .85rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fffffff5, #eaf9fff0, #ffebfbf0);
+  border: 2px solid #fff;
+  border-radius: 17px;
+  box-shadow: 0 0 0 1px #657cbfb8, 0 8px 25px #2a266347;
+}
+.voice-wave[hidden] { display: none; }
+.wave-label {
+  flex: 0 0 auto;
+  color: #514579;
+  font: 700 10px "Trebuchet MS", Arial, sans-serif;
+  letter-spacing: .05em;
+}
+.wave-bars {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  min-width: 0;
+  height: 42px;
+}
+.wave-bars span {
+  width: 3px;
+  min-width: 2px;
+  height: 5px;
+  background: linear-gradient(#f05dc5, #8263dc, #39bfe1);
+  border-radius: 99px;
+  transition: height 55ms linear;
+}
+@media (max-width: 650px) {
+  body[data-coach-page="practice"] .voice-wave,
+  body[data-coach-page="settings"] .voice-wave { bottom: 15rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave-bars span { transition: none; }
+}

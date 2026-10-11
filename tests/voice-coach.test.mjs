@@ -6,6 +6,8 @@ import { createServer, setup } from '../server.mjs';
 import { GeminiCoach, encodePCM, decodePCM } from '../js/gemini-coach.js';
 import { SongVolumeDucker } from '../js/song-volume.js';
 import { createCoachStartup } from '../js/coach-startup.js';
+import { createMicMeter, coachEnabled, rememberCoach } from '../js/voice-ui.js';
+import { pausePageMusic } from '../js/music-controls.js';
 
 // Exercise the local HTTP boundary with a mocked Google token response.
 test('server protects secrets, requires same origin, and provisions a single-use token', async t => {
@@ -112,10 +114,11 @@ test('coach stop releases microphone, audio nodes, playback, and socket', () => 
 test('song page actions use actual buttons, validate titles, and defer navigation', async () => {
   const elements = new Map();
   class Element {
-    constructor() { this.volume=1; this.children=[]; this.events={}; this.dataset={}; this.style={}; this.classList={ contains:()=>false, toggle:()=>{} }; }
+    constructor() { this.volume=1; this.children=[]; this.events={}; this.dataset={}; this.style={}; this.classes={}; this.classList={ contains:name=>Boolean(this.classes[name]), toggle:(name, active)=>{ this.classes[name]=active; } }; }
     querySelector() { return this.child ||= new Element(); }
     append(el) { this.children.push(el); }
-    setAttribute() {}
+    setAttribute(name, value) { (this.attributes ||= {})[name] = value; }
+    getAttribute(name) { return this.attributes?.[name] ?? null; }
     addEventListener(name, fn) { this.events[name]=fn; }
     click() { this.events.click?.(); }
     pause() { this.paused = true; }
@@ -123,32 +126,54 @@ test('song page actions use actual buttons, validate titles, and defer navigatio
     async play() { if (this.playError) throw this.playError; this.paused = false; }
   }
   const rows = ['World Is Mine', 'Shake It Off', 'Tell Your World'].map(title => { const row = new Element(); row.dataset.song=title; row.dataset.preview=`audio/${title.toLowerCase().replaceAll(' ', '_')}.mp3`; return row; });
+  rows.forEach((row, index) => row.querySelector().setAttribute('src', ['images/world_is_mine.webp', 'images/shake_it_off.jpeg', 'images/tell_your_world.jpg'][index]));
   rows[0].classList.contains=()=>true;
-  const context = { GeminiCoach: class{}, SongVolumeDucker, createCoachStartup, URLSearchParams, document: { querySelectorAll:()=>rows, createElement:()=>new Element(), getElementById:id=>{ if (!elements.has(id)) elements.set(id,new Element()); return elements.get(id); } }, window: { addEventListener:()=>{}, location:{} } };
+  const context = { GeminiCoach: class{}, SongVolumeDucker, createCoachStartup, createMicMeter, coachEnabled, rememberCoach, pausePageMusic, URLSearchParams, document: { querySelectorAll:selector=>selector==='audio'?[elements.get('preview-player')]:rows, createElement:()=>new Element(), getElementById:id=>{ if (!elements.has(id)) elements.set(id,new Element()); return elements.get(id); } }, window: { addEventListener:()=>{}, location:{} } };
   vm.createContext(context);
   const code = (await readFile(new URL('../js/songs.js', import.meta.url), 'utf8')).replace(/^import .*\n/gm, '');
   vm.runInContext(code, context);
   assert.equal(vm.runInContext("handleCoachAction('select_song', {title:'Shake It Off'}).selectedSong", context), 'Shake It Off');
   assert.match(vm.runInContext("handleCoachAction('select_song', {title:'unknown'}).error", context), /not on/);
-  assert.equal(vm.runInContext("handleCoachAction('dance', {}).dancePageReady", context), false);
-  assert.equal(context.window.location.href, 'practice.html');
+  assert.equal(vm.runInContext("handleCoachAction('dance', {}).dancePageReady", context), true);
+  const practiceURL = new URL(context.window.location.href, 'http://localhost:3000');
+  assert.equal(practiceURL.pathname, '/practice.html');
+  assert.equal(practiceURL.searchParams.get('song'), 'Shake It Off');
+  assert.equal(practiceURL.searchParams.get('audio'), 'audio/shake_it_off.mp3');
   vm.runInContext("handleCoachAction('go_home', {}).deferred()", context);
   assert.equal(context.window.location.href, 'StepDanceHome.html');
-  assert.match(setup.systemInstruction.parts[0].text, /do you want me to read the songs/);
-  // Voice playback must bypass the automatic-preview guard while coach is active.
+  assert.match(setup.systemInstruction.parts[0].text, /Start by saying exactly: "We are on the Song list page\. Would you like me to read the available songs for you\?"/);
+  // Voice playback and hover previews share the player while the coach is active.
   vm.runInContext("coachActive = true; coach = { tell: () => {}, cancelPendingAction: () => {}, requireDanceQuestion: () => {} };", context);
   const player = elements.get('preview-player');
+  const cd = elements.get('cd-player');
   for (const row of rows) {
     const action = vm.runInContext(`handleCoachAction('play_song', {title:${JSON.stringify(row.dataset.song)}})`, context);
     assert.equal(action.selectedSong, row.dataset.song);
     await action.deferred();
     assert.equal(player.src, row.dataset.preview);
     assert.equal(player.paused, false);
+    assert.equal(cd.classList.contains('is-playing'), true, 'disc spins during voice-requested music');
+    assert.equal(elements.get('cd-song').textContent, row.dataset.song);
+    assert.equal(elements.get('cd-state').textContent, 'NOW PLAYING');
+    assert.equal(elements.get('cd-cover').getAttribute('src'), row.querySelector().getAttribute('src'), 'case cover follows the playing song');
     assert.match(elements.get('status').textContent, /Playing song:/);
     row.events.pointerleave();
-    await rows[(rows.indexOf(row) + 1) % rows.length].events.pointerenter();
-    assert.equal(player.paused, false, 'hover must not stop a voice-requested song');
-    assert.equal(player.src, row.dataset.preview, 'hover must not replace a voice-requested song');
+    assert.equal(player.paused, false, 'leaving a selected song keeps it playing');
+    player.currentTime = 12;
+    await row.events.pointerenter();
+    assert.equal(player.currentTime, 12, 'hovering the playing song does not restart it');
+    const hovered = rows[(rows.indexOf(row) + 1) % rows.length];
+    await hovered.events.pointerenter();
+    assert.equal(player.paused, false, 'hover plays audio while the coach is active');
+    assert.equal(player.src, hovered.dataset.preview, 'hover plays the corresponding song');
+    assert.equal(elements.get('cd-song').textContent, hovered.dataset.song);
+    assert.equal(elements.get('cd-cover').getAttribute('src'), hovered.querySelector().getAttribute('src'));
+    assert.equal(cd.classList.contains('is-playing'), true, 'hover audio spins the disc');
+    assert.equal(vm.runInContext('selectedRow.dataset.song', context), row.dataset.song, 'preview does not change the chosen dance song');
+    await hovered.events.pointerleave();
+    assert.equal(player.src, row.dataset.preview, 'leaving a preview resumes the selected song');
+    assert.equal(player.currentTime, 12, 'selected playback resumes at its saved position');
+    assert.equal(elements.get('cd-cover').getAttribute('src'), row.querySelector().getAttribute('src'));
   }
   const selected = vm.runInContext("handleCoachAction('play_song', {})", context);
   await selected.deferred();
@@ -156,18 +181,40 @@ test('song page actions use actual buttons, validate titles, and defer navigatio
   const before = player.src;
   assert.match(vm.runInContext("handleCoachAction('play_song', {title:'unavailable'}).error", context), /not on/);
   assert.equal(player.src, before, 'unknown song must not substitute audio');
+  player.currentTime = 12;
+  const paused = vm.runInContext("handleCoachAction('pause_music', {})", context);
+  assert.equal(paused.musicPaused, true);
+  assert.equal(player.paused, true);
+  assert.equal(player.currentTime, 12, 'pause preserves the current position');
+  assert.equal(cd.classList.contains('is-playing'), false, 'pause freezes the disc');
+  assert.equal(vm.runInContext('coachActive', context), true, 'pause keeps the coach listening');
+  await rows[0].events.pointerenter();
+  await rows[0].events.pointerleave();
+  assert.equal(player.src, before, 'hover cannot replace the paused song');
+  assert.equal(player.paused, true, 'hover cannot restart paused music');
+  await vm.runInContext("handleCoachAction('play_song', {})", context).deferred();
+  assert.equal(player.paused, false);
+  assert.equal(player.currentTime, 12, 'playing again resumes the paused position');
   vm.runInContext("handleCoachAction('stop_song', {})", context);
   assert.equal(player.paused, true);
   assert.equal(player.currentTime, 0);
+  assert.equal(cd.classList.contains('is-playing'), false, 'stopping music freezes the disc');
+  assert.equal(elements.get('cd-cover').getAttribute('src'), rows[2].querySelector().getAttribute('src'), 'stopping audio keeps the selected song cover');
   const chosen = vm.runInContext("handleCoachAction('select_song', {title:'Shake It Off'})", context);
   assert.equal(chosen.queued, true, 'voice selection must also queue audio');
+  assert.equal(elements.get('cd-cover').getAttribute('src'), rows[1].querySelector().getAttribute('src'), 'voice selection updates the cover before queued playback starts');
+  assert.equal(elements.get('cd-song').textContent, 'Shake It Off');
+  assert.equal(cd.classList.contains('is-playing'), false, 'queued selection must not show a spinning disc');
   await chosen.deferred();
   assert.equal(player.src, rows[1].dataset.preview);
   assert.equal(player.paused, false);
   const next = vm.runInContext("handleCoachAction('navigate_song', {direction:'next'})", context);
   assert.equal(next.selectedSong, 'Tell Your World');
-  await next.deferred();
-  assert.equal(player.src, rows[2].dataset.preview);
+  assert.equal(next.deferred, undefined, 'next must start without waiting for coach speech');
+  assert.equal(next.playbackAutomatic, true);
+  assert.equal(next.playbackStarted, true);
+  assert.equal(player.src, rows[2].dataset.preview, 'next immediately starts the row below');
+  assert.equal(player.paused, false);
   const lastBoundary = vm.runInContext("handleCoachAction('navigate_song', {direction:'next'})", context);
   assert.equal(lastBoundary.boundaryReached, true);
   assert.equal(lastBoundary.deferred, undefined, 'end of list must not queue or wrap');
@@ -177,6 +224,8 @@ test('song page actions use actual buttons, validate titles, and defer navigatio
   assert.equal(player.paused, false, 'boundary must leave the current audio playing');
   const previous = vm.runInContext("handleCoachAction('navigate_song', {direction:'previous'})", context);
   assert.equal(previous.selectedSong, 'Shake It Off', 'previous means row above, not previous listening history');
+  assert.equal(player.paused, true, 'previous waits for the coach to announce the name');
+  assert.equal(previous.acknowledgment, 'The previous song is Shake It Off. Do you want to dance to it?');
   await previous.deferred();
   assert.equal(player.src, rows[1].dataset.preview);
   const first = vm.runInContext("handleCoachAction('navigate_song', {direction:'previous'})", context);
@@ -191,13 +240,67 @@ test('song page actions use actual buttons, validate titles, and defer navigatio
   player.playError = Object.assign(new Error('blocked'), { name: 'NotAllowedError' });
   await vm.runInContext("handleCoachAction('play_song', {title:'World Is Mine'})", context).deferred();
   assert.match(elements.get('status').textContent, /Click the song title/);
+  assert.equal(cd.classList.contains('is-playing'), false, 'blocked playback must not spin');
+  assert.equal(elements.get('cd-cover').getAttribute('src'), rows[0].querySelector().getAttribute('src'), 'blocked audio keeps the requested song cover');
   player.playError = null;
   rows[1].querySelector().click();
+  assert.equal(elements.get('cd-cover').getAttribute('src'), rows[1].querySelector().getAttribute('src'), 'manual selection immediately changes the picture');
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(player.src, rows[1].dataset.preview, 'clicking a title replaces the removed playback button');
   assert.equal(player.paused, false);
+  assert.equal(cd.classList.contains('is-playing'), true);
+  await rows[2].events.pointerenter();
+  assert.equal(player.src, rows[2].dataset.preview);
+  rows[0].querySelector().click();
+  await new Promise(resolve => setImmediate(resolve));
+  await rows[2].events.pointerleave();
+  assert.equal(player.src, rows[0].dataset.preview, 'a new selection during a preview replaces the saved background song');
+  rows[1].querySelector().click();
+  await new Promise(resolve => setImmediate(resolve));
+  player.events.waiting();
+  assert.equal(cd.classList.contains('is-playing'), false, 'buffering freezes the disc');
+  player.events.playing();
+  assert.equal(cd.classList.contains('is-playing'), true, 'resumed playback spins again');
+  player.events.pause();
+  assert.equal(cd.classList.contains('is-playing'), false, 'native audio pause freezes the disc');
+  player.events.playing();
+  player.events.ended();
+  assert.equal(cd.classList.contains('is-playing'), false, 'natural track ending freezes the disc');
+  vm.runInContext('coachActive = false', context);
+  await rows[0].events.pointerenter();
+  assert.equal(cd.classList.contains('is-playing'), true, 'hover preview spins the same disc');
+  rows[0].events.pointerleave();
+  assert.equal(cd.classList.contains('is-playing'), false, 'leaving a preview freezes the disc');
+  assert.equal(elements.get('cd-cover').getAttribute('src'), rows[1].querySelector().getAttribute('src'), 'ending a hover preview restores the selected cover');
   assert.ok(setup.tools[0].functionDeclarations.some(tool => tool.name === 'play_song'));
 
+});
+
+test('audio supports byte ranges so selected playback can resume after a hover preview', async t => {
+  const server = createServer();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const url = `http://127.0.0.1:${server.address().port}/audio/shake_it_off.mp3`;
+  const source = await readFile(new URL('../audio/shake_it_off.mp3', import.meta.url));
+  const response = await fetch(url, { headers: { Range: 'bytes=123-186' } });
+  assert.equal(response.status, 206);
+  assert.equal(response.headers.get('accept-ranges'), 'bytes');
+  assert.equal(response.headers.get('content-range'), `bytes 123-186/${source.length}`);
+  assert.equal(response.headers.get('content-length'), '64');
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), source.subarray(123, 187));
+  const suffix = await fetch(url, { headers: { Range: 'bytes=-4' } });
+  assert.equal(suffix.status, 206);
+  assert.deepEqual(Buffer.from(await suffix.arrayBuffer()), source.subarray(-4));
+  const head = await fetch(url, { method: 'HEAD', headers: { Range: 'bytes=123-' } });
+  assert.equal(head.status, 206);
+  assert.equal(head.headers.get('content-length'), String(source.length - 123));
+  assert.equal((await head.arrayBuffer()).byteLength, 0);
+  for (const range of [`bytes=${source.length}-`, 'bytes=10-5', 'bytes=-0', 'bytes=-', 'bytes=0-1,3-4']) {
+    const invalid = await fetch(url, { headers: { Range: range } });
+    assert.equal(invalid.status, 416);
+    assert.equal(invalid.headers.get('content-range'), `bytes */${source.length}`);
+    assert.equal((await invalid.arrayBuffer()).byteLength, 0);
+  }
 });
 
 test('song volume ducks for either speaker and restores after both are quiet', () => {
@@ -275,6 +378,16 @@ test('question already spoken by Gemini is not asked twice', () => {
   assert.equal(coach.questionTask, undefined);
 });
 
+test('immediate next playback still requires the dance question', async t => {
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: true, json: async () => ({ data: 'AAA=', mimeType: 'audio/pcm;rate=24000' }) }));
+  const { coach, transcripts, played } = questionCoach(() => ({ queued: false, playbackAutomatic: true, playbackStarted: true, selectedSong: 'Tell Your World' }));
+  coach.handleTools([{ id: 'immediate-next', name: 'navigate_song', args: { direction: 'next' } }]);
+  coach.handleMessage({ serverContent: { outputTranscription: { text: 'Enjoy!' }, turnComplete: true } });
+  await coach.questionTask;
+  assert.equal(played.length, 1);
+  assert.match(transcripts.at(-1), /Do you want to dance to it\?$/);
+});
+
 test('canceling selection while TTS loads prevents a stale question', async t => {
   let completeRequest;
   t.mock.method(globalThis, 'fetch', () => new Promise(resolve => { completeRequest = resolve; }));
@@ -331,8 +444,9 @@ test('fixed question endpoint keeps key private and caches Gemini Kore speech', 
 test('arrival hint and Space start the coach without stealing native keyboard controls', () => {
   const events = {}, spoken = [];
   let starts = 0, canceled = 0, resumes = 0, active = false;
+  const coachButton = { contains: () => false };
   const surface = { addEventListener: (name, fn) => { events[name] = fn; }, speechSynthesis: { speak: utterance => spoken.push(utterance.text), cancel: () => canceled++ }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } } };
-  createCoachStartup({ surface, isActive: () => active, start: () => { starts++; active = true; }, onActive: () => resumes++ });
+  createCoachStartup({ surface, coachButton, isActive: () => active, start: () => { starts++; active = true; }, onActive: () => resumes++ });
   assert.equal(spoken[0], 'Press space bar to start the voice coach');
   assert.equal(starts, 0, 'arrival must not enable microphone before activation');
   let prevented = 0;
@@ -350,17 +464,14 @@ test('arrival hint and Space start the coach without stealing native keyboard co
   events.keydown(space);
   assert.equal(starts, 1, 'Space must not open duplicate sessions');
   assert.equal(resumes, 1, 'a blocked audio context can be resumed with Space');
-});
-
-test('home page Space opens the song page with an explicit coach-start intent', async () => {
-  const events = {};
-  let click;
-  const surface = { addEventListener: (name, fn) => { events[name] = fn; }, location: {} };
-  const context = { createCoachStartup, window: surface, document: { getElementById: () => ({ addEventListener: (_, fn) => { click = fn; } }) } };
-  vm.createContext(context);
-  vm.runInContext((await readFile(new URL('../js/home-coach-startup.js', import.meta.url), 'utf8')).replace(/^import .*\n/, ''), context);
-  events.keydown({ code: 'Space', target: {}, preventDefault: () => {} });
-  assert.equal(surface.location.href, 'songs.html?startCoach=1');
-  click();
-  assert.equal(surface.location.href, 'songs.html?startCoach=1');
+  events.keydown({ ...space, target: coachButton });
+  events.keyup({ ...space, target: coachButton });
+  assert.equal(active, true, 'Space keeps the coach active with its Stop button focused');
+  assert.equal(starts, 1, 'focused Space must reuse the active microphone session');
+  assert.equal(resumes, 2);
+  assert.equal(prevented, 4, 'both key events suppress native Stop button activation');
+  active = false;
+  events.keydown({ ...space, target: coachButton });
+  assert.equal(active, true);
+  assert.equal(starts, 2, 'focused Space starts a paused coach');
 });

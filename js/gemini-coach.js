@@ -20,8 +20,8 @@ export function decodePCM(data) {
 
 // One microphone stream and one WebSocket for the entire conversation.
 export class GeminiCoach {
-  constructor({ onStatus, onTranscript, onLevel, onAction, onStopped, initialSong = 'World Is Mine' }) {
-    Object.assign(this, { onStatus, onTranscript, onLevel, onAction, onStopped, initialSong });
+  constructor({ onStatus, onTranscript, onLevel, onAction, onStopped, initialSong = 'World Is Mine', page = 'songs', openingPrompt, listeningMessage = 'Listening. Take your time — ask about songs, choose one, or say Dance!' }) {
+    Object.assign(this, { onStatus, onTranscript, onLevel, onAction, onStopped, initialSong, page, openingPrompt, listeningMessage });
     this.disposed = false;
     this.ready = false;
     this.sources = new Set();
@@ -38,21 +38,26 @@ export class GeminiCoach {
         throw new Error('Live audio needs a modern browser on localhost or HTTPS.');
       }
       this.onStatus('Connecting to Gemini. Please allow microphone access.');
-      // Resume directly within the Start button gesture, before asynchronous requests.
+      // Try playback immediately, but never wait for autoplay permission before
+      // requesting the mic. Active capture can unlock audio on first arrival.
       this.context = new AudioContext();
-      this.audioUnlockTimer = setTimeout(() => {
-        if (!this.disposed && this.context.state === 'suspended') this.onStatus('Press Space or click Start voice coach again to enable audio.');
-      }, 1500);
-      await this.context.resume();
-      clearTimeout(this.audioUnlockTimer);
-      if (this.disposed) return;
-      this.onStatus('Connecting to Gemini. Please allow microphone access.');
+      this.unlockAudio = () => this.resumeAudio();
+      window.addEventListener('pointerup', this.unlockAudio);
+      window.addEventListener('keydown', this.unlockAudio);
+      this.resumeAudio();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: {
         channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true
       } });
       if (this.disposed) { stream.getTracks().forEach(track => track.stop()); return; }
       this.stream = stream;
-      stream.getTracks().forEach(track => track.addEventListener('ended', () => this.fail('Microphone disconnected. Reconnect it and start the coach again.')));
+      stream.getTracks().forEach(track => track.addEventListener('ended', () => this.fail('Microphone disconnected. Reconnect it and press Space to try again.')));
+      this.audioUnlockTimer = setTimeout(() => {
+        if (!this.disposed && this.context.state === 'suspended') this.onStatus('Tap anywhere on the page or press Space to enable audio.');
+      }, 1500);
+      await this.context.resume();
+      clearTimeout(this.audioUnlockTimer);
+      if (this.disposed) return;
+      this.onStatus('Connecting to Gemini. Your microphone is ready.');
       await this.context.audioWorklet.addModule('/js/mic-worklet.js');
       if (this.disposed) return;
       this.input = this.context.createMediaStreamSource(stream);
@@ -75,12 +80,12 @@ export class GeminiCoach {
       };
       this.drawLevel();
       const response = await fetch('/api/gemini-session', {
-        method: 'POST', headers: { 'X-Step-Dance': 'voice-coach' }, signal: AbortSignal.timeout(15000)
+        method: 'POST', headers: { 'X-Step-Dance': 'voice-coach', 'X-Step-Dance-Page': this.page }, signal: AbortSignal.timeout(15000)
       });
       if (this.disposed) return;
       let credentials;
       try { credentials = await response.json(); }
-      catch { throw new Error('The voice coach could not start. Please refresh the page and try again.'); }
+      catch { throw new Error('Start the app with npm start, then open http://localhost:3000/songs.html.'); }
       if (!response.ok) throw new Error(credentials.error || 'Gemini session could not start.');
       this.socket = new WebSocket(`${ENDPOINT}?access_token=${encodeURIComponent(credentials.token)}`);
       this.socket.binaryType = 'arraybuffer';
@@ -94,9 +99,9 @@ export class GeminiCoach {
         } catch { this.fail('Gemini sent an unexpected response. Please start the coach again.'); }
       };
       this.socket.onerror = () => this.fail('Could not connect to Gemini Live. Check your connection and API access.');
-      this.socket.onclose = () => this.fail('Gemini session ended. Tap Start voice coach to reconnect.');
+      this.socket.onclose = () => this.fail('Gemini session ended. Press Space to reconnect.');
     } catch (error) {
-      this.fail(error.name === 'NotAllowedError' ? 'Microphone access was blocked. Allow microphone access, then start again.' : error.message);
+      this.fail(error.name === 'NotAllowedError' ? 'Microphone access was blocked. Allow microphone access, then press Space to try again.' : error.message);
     }
   }
 
@@ -106,7 +111,9 @@ export class GeminiCoach {
 
   resumeAudio() {
     if (!this.disposed && this.context?.state === 'suspended') {
-      this.context.resume().catch(() => this.onStatus('Audio is blocked. Press Space or click Start voice coach again.'));
+      this.context.resume().catch(() => {
+        if (!this.disposed) this.onStatus('Tap anywhere on the page or press Space to enable audio.');
+      });
     }
   }
 
@@ -120,7 +127,7 @@ export class GeminiCoach {
       clearTimeout(this.connectTimer);
       this.ready = true;
       this.onStatus('Gemini is connected. Your coach will greet you now.');
-      this.tell(`Current page state: ${this.initialSong} is selected. Greet me with the exact opening question from your instructions, then wait for my voice reply.`);
+      this.tell(this.openingPrompt || `Current page state: ${this.initialSong} is selected. Greet me with the exact opening question from your instructions, then wait for my voice reply.`);
     }
     const content = message.serverContent;
     if (content) {
@@ -165,7 +172,7 @@ export class GeminiCoach {
       else {
         this.executedCalls.add(call.id);
         result = this.onAction(call.name, call.args || {});
-        if (result?.queued && result.playbackAutomatic) this.requireDanceQuestion();
+        if (result?.playbackAutomatic) this.requireDanceQuestion();
         if (result?.deferred) {
           this.pendingAction = result.deferred;
           // Allow Gemini's spoken acknowledgment to play before leaving/stopping.
@@ -212,7 +219,7 @@ export class GeminiCoach {
         }
       }
       if (this.pendingAction) this.runPendingAction();
-      else this.onStatus('Listening. Take your time — ask about songs, choose one, or say Dance!');
+      else this.onStatus(this.listeningMessage);
     }
   }
 
@@ -346,6 +353,10 @@ export class GeminiCoach {
     clearTimeout(this.connectTimer);
     clearTimeout(this.audioUnlockTimer);
     clearTimeout(this.actionTimer);
+    if (this.unlockAudio) {
+      window.removeEventListener('pointerup', this.unlockAudio);
+      window.removeEventListener('keydown', this.unlockAudio);
+    }
     cancelAnimationFrame(this.frame);
     this.clearPlayback();
     this.socket?.close();

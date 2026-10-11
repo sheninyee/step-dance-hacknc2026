@@ -3,14 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Song List | Step Dance</title>
+  <title>Songlist</title>
+  <style>@view-transition { navigation: auto; }</style>
+  <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/372.gif" type="image/x-icon">
+  <link rel="stylesheet" href="js/voice-ui.css">
   <link rel="stylesheet" href="songs.css">
   <script src="js/songs.js" type="module"></script>
 </head>
 <body>
+
+  <!-- Floating Clouds Background -->
+  <div class="clouds-container" aria-hidden="true">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+    <div class="cloud cloud-5"></div>
+  </div>
+
+  <!-- CD Player (Floating in Top-Right Corner) -->
+  <aside class="cd-player" id="cd-player" aria-label="CD player">
+    <div class="cd-player-brand"><span>STEP DANCE</span><span>CD-01</span></div>
+    <div class="cd-case" aria-hidden="true">
+      <img class="cd-disc" src="images/cd.png" width="190" height="189" alt="">
+      <img class="cd-cover" id="cd-cover" src="images/step_dance_cd_cover.png" width="200" height="200" alt="">
+      <span class="cd-hinge"></span>
+    </div>
+    <div class="cd-display">
+      <div class="cd-display-status">
+        <span class="cd-led" aria-hidden="true"></span>
+        <span id="cd-state">STOPPED</span>
+        <span class="cd-format">STEREO</span>
+      </div>
+      <p id="cd-song">Choose a song</p>
+    </div>
+    <div class="cd-player-footer" aria-hidden="true"><span>DIGITAL AUDIO</span><span class="cd-speaker"></span></div>
+  </aside>
+
+  <!-- Main Aero Glass Song Panel -->
   <main class="song-panel" aria-labelledby="page-title">
-    <a class="home-link" href="StepDanceHome.html">← Step Dance</a>
-    <h1 id="page-title">Songs List</h1>
+    <header class="song-heading">
+      <div class="heading-left">
+        <a class="home-link" href="StepDanceHome.html">← Home</a>
+        <h1 id="page-title">Songs List</h1>
+      </div>
+    </header>
 
     <section class="song-list" aria-label="Choose a song">
       <article class="song-row selected song-world" data-song="World Is Mine" data-artist="ryo (supercell)" data-preview="audio/world_is_mine.mp3">
@@ -19,12 +56,14 @@
           <span class="song-name">World Is Mine <small>Hatsune Miku · ryo</small></span>
         </button>
       </article>
+
       <article class="song-row song-shake" data-song="Shake It Off" data-artist="Taylor Swift" data-preview="audio/shake_it_off.mp3">
         <button class="song-select" type="button" aria-pressed="false">
           <img class="album-art" src="images/shake_it_off.jpeg" alt="">
           <span class="song-name">Shake It Off <small>Taylor Swift</small></span>
         </button>
       </article>
+
       <article class="song-row song-tell" data-song="Tell Your World" data-artist="livetune" data-preview="audio/tell_your_world.mp3">
         <button class="song-select" type="button" aria-pressed="false">
           <img class="album-art" src="images/tell_your_world.jpg" alt="">
@@ -33,6 +72,7 @@
       </article>
     </section>
 
+    <!-- Voice Coach Section -->
     <section class="voice-coach" aria-label="Coach conversation">
       <div class="coach-start-controls">
         <button class="coach-button" id="coach-button" type="button" aria-pressed="false" aria-keyshortcuts="Space" aria-describedby="coach-start-hint">Start voice coach</button>
@@ -44,14 +84,17 @@
       </div>
     </section>
 
+    <!-- Big Action Button -->
     <button class="dance-button" id="dance-button" type="button">DANCE</button>
     <p class="status" id="status" role="status" aria-live="polite">Hover over a song to hear a preview</p>
   </main>
+
   <audio id="preview-player" preload="none" aria-hidden="true"></audio>
   <aside class="voice-wave" id="voice-wave" aria-hidden="true" hidden>
     <span class="wave-label">MIC LIVE</span>
     <div class="wave-bars" id="wave-bars"></div>
     <span class="wave-glint" aria-hidden="true"></span>
   </aside>
+
 </body>
 </html>
