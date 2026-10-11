@@ -12,7 +12,6 @@ import subprocess
 
 CONNECTIONS = np.array([(c.start, c.end) for c in vision.PoseLandmarksConnections.POSE_LANDMARKS],dtype=np.int32,)
 
-
 def draw_landmarks_on_image(rgb_image, detection_result):
   img = rgb_image if rgb_image.flags.writeable else rgb_image.copy()
   h, w = img.shape[:2]

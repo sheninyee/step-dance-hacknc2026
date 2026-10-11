@@ -90,7 +90,6 @@ def upload_file():
                 test_dance_v2.AnalyzeVideo(f"{UPLOAD_FOLDER}h264_{video_file.filename}")
                     # print("hit!")
             
-            
     return '''
     <!doctype html>
     <title>Upload new File</title>
