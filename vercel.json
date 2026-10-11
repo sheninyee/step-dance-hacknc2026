@@ -1,1 +1,6 @@
-{ "rewrites": [{ "source": "/", "destination": "/StepDanceHome.html" }] }
+{
+  "rewrites": [
+    { "source": "/", "destination": "/StepDanceHome.html" },
+    { "source": "/demo", "destination": "/demo.html" }
+  ]
+}

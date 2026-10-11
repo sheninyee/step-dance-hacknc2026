@@ -257,10 +257,7 @@ coachButton.addEventListener('click', () => {
 
 danceButton.addEventListener('click', () => {
   stopPreview();
-  statusMessage.textContent = `${selectedRow.dataset.song} selected. Dance mode is not connected yet`;
-  if (coachActive && !coachActionInProgress) {
-    coach.tell(`Page event: the user clicked Dance for ${selectedRow.dataset.song}. The dance page is unfinished. Encourage them and explain this briefly. Do not call dance again.`);
-  }
+  window.location.href = 'practice.html';
 });
 
 // Release the microphone when leaving this page.
