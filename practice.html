@@ -102,6 +102,28 @@
     let mediaRecorder;
     let recordedChunks = [];
 
+<<<<<<< Updated upstream
+=======
+    // Ensure video element is muted so the browser allows autoplay
+    if (videoElement) {
+      videoElement.muted = true;
+    }
+    
+    function playRemoteVideo(url) {
+      // If the webcam was attached earlier, release it first
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(t => t.stop());
+        videoElement.srcObject = null;   // srcObject overrides src, so this must be cleared
+      }
+
+      videoElement.src = url;
+      videoElement.muted = true;         // lets autoplay work in most browsers
+      videoElement.controls = true;
+      videoElement.load();
+      videoElement.play().catch(e => console.error("play blocked:", e));
+    }
+
+>>>>>>> Stashed changes
     async function startVideoStream() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -185,7 +207,29 @@
             mediaRecorder.stop(); 
         }
         const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+<<<<<<< Updated upstream
         uploadVideoBlob(videoBlob)
+=======
+        const formData = new FormData();
+        const randomNum = Math.floor(Math.random() * 10000);
+        formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
+
+        try {
+          const response = await fetch('http://127.0.0.1:5000/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (response.ok) {
+            recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
+            recordedVideoElement.load();
+          }
+          if (response.ok) {
+            playRemoteVideo("http://127.0.0.1:5000/download?filename=World_is_Mine_wireframe.webm");
+          }
+        } catch (error) {
+          console.error('Upload failed:', error);
+        }
+>>>>>>> Stashed changes
       });
 
       startVideoStream();
