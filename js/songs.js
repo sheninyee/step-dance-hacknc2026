@@ -5,6 +5,10 @@ import { createCoachStartup } from './coach-startup.js';
 const songRows = [...document.querySelectorAll('.song-row')];
 const statusMessage = document.getElementById('status');
 const previewPlayer = document.getElementById('preview-player');
+const cdPlayer = document.getElementById('cd-player');
+const cdState = document.getElementById('cd-state');
+const cdSong = document.getElementById('cd-song');
+const cdCover = document.getElementById('cd-cover');
 const coachButton = document.getElementById('coach-button');
 const coachStatus = document.getElementById('coach-status');
 const coachTranscript = document.getElementById('coach-transcript');
@@ -12,6 +16,7 @@ const danceButton = document.getElementById('dance-button');
 const voiceWave = document.getElementById('voice-wave');
 const waveBars = document.getElementById('wave-bars');
 let selectedRow = songRows.find((row) => row.classList.contains('selected'));
+let selectedCoverRow = null;
 let activePreviewRow = null;
 let previewStarting = false;
 let requestedPlayback = false;
@@ -89,7 +94,7 @@ function handleCoachAction(name, args) {
       statusMessage.textContent = message;
       return { boundaryReached: true, selectedSong: selectedRow.dataset.song, availableSongs: titles, message };
     }
-    return queueSong(row);
+    return queueSong(row, { playImmediately: step > 0, previous: step < 0 });
   }
   if (name === 'stop_song') {
     coach?.cancelPendingAction();
@@ -115,22 +120,33 @@ function handleCoachAction(name, args) {
   return { error: 'Unsupported page action.' };
 }
 
-function queueSong(row) {
+function queueSong(row, { playImmediately = false, previous = false } = {}) {
   coach?.cancelPendingAction();
   stopPreview();
   selectSong(row, false);
-  statusMessage.textContent = `${row.dataset.song} queued — playing after the coach finishes`;
-  return {
+  const result = {
     selectedSong: row.dataset.song,
-    queued: true,
+    queued: !playImmediately,
     playbackAutomatic: true,
-    acknowledgment: `Great choice! Starting ${row.dataset.song} now. Do you want to dance to it?`,
-    deferred: () => playRequestedSong(row)
+    acknowledgment: previous
+      ? `The previous song is ${row.dataset.song}. Do you want to dance to it?`
+      : playImmediately
+        ? 'Do you want to dance to it?'
+        : `Great choice! Starting ${row.dataset.song} now. Do you want to dance to it?`
   };
+  if (playImmediately) {
+    playRequestedSong(row);
+    return { ...result, playbackStarted: true };
+  }
+  statusMessage.textContent = `${row.dataset.song} queued — playing after the coach finishes`;
+  return { ...result, deferred: () => playRequestedSong(row) };
 }
 
 function selectSong(row, preview = true) {
   selectedRow = row;
+  selectedCoverRow = row;
+  // Selection updates artwork immediately; audio may still be queued or blocked.
+  updateCDPlayer(cdPlayer.classList.contains('is-playing'), row);
 
   for (const songRow of songRows) {
     const isSelected = songRow === selectedRow;
@@ -158,6 +174,15 @@ function stopPreview() {
   previewStarting = false;
   previewPlayer.pause();
   previewPlayer.currentTime = 0;
+  updateCDPlayer(false);
+}
+
+function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow) {
+  cdPlayer.classList.toggle('is-playing', playing);
+  cdState.textContent = playing ? 'NOW PLAYING' : 'STOPPED';
+  cdSong.textContent = row?.dataset.song || 'Choose a song';
+  const cover = row?.querySelector('.album-art')?.getAttribute('src') || 'images/step_dance_cd_cover.png';
+  if (cdCover.getAttribute('src') !== cover) cdCover.setAttribute('src', cover);
 }
 
 async function playRequestedSong(row) {
@@ -191,6 +216,7 @@ async function playPreview(row, requested = false) {
   try {
     await previewPlayer.play();
     if (activePreviewRow === row && requestId === previewRequestId) {
+      updateCDPlayer(true);
       statusMessage.textContent = `Playing ${requested ? 'song' : 'preview'}: ${row.dataset.song}`;
       return { playing: row.dataset.song };
     }
@@ -198,6 +224,7 @@ async function playPreview(row, requested = false) {
     if (activePreviewRow === row && requestId === previewRequestId) {
       activePreviewRow = null;
       requestedPlayback = false;
+      updateCDPlayer(false);
 
       if (error.name === 'NotAllowedError') {
         statusMessage.textContent = 'Your browser blocked audio. Click the song title to hear it.';
@@ -230,12 +257,19 @@ for (const row of songRows) {
   });
 }
 
+// Follow the music element, including pauses, buffering, and natural track endings.
+previewPlayer.addEventListener('playing', () => updateCDPlayer(true));
+for (const event of ['pause', 'waiting', 'emptied', 'loadstart']) {
+  previewPlayer.addEventListener(event, () => updateCDPlayer(false));
+}
+
 previewPlayer.addEventListener('error', () => {
   if (activePreviewRow) {
     statusMessage.textContent = `Could not load preview for ${activePreviewRow.dataset.song}`;
     activePreviewRow = null;
     requestedPlayback = false;
   }
+  updateCDPlayer(false);
 });
 
 previewPlayer.addEventListener('ended', () => {
@@ -244,6 +278,7 @@ previewPlayer.addEventListener('ended', () => {
     activePreviewRow = null;
     requestedPlayback = false;
   }
+  updateCDPlayer(false);
 });
 
 coachButton.addEventListener('click', () => {

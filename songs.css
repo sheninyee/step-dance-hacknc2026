@@ -54,6 +54,197 @@ a:focus-visible {
   text-decoration: underline;
 }
 
+.song-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.cd-player {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 240px;
+  flex: 0 0 auto;
+  padding: 0;
+  color: #514579;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+.cd-player-brand,
+.cd-player-footer,
+.cd-display-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.cd-player-brand {
+  padding: 2px 3px 10px;
+  text-shadow: 0 1px #fff;
+}
+
+.cd-player-brand span:last-child {
+  padding: 2px 5px;
+  color: #78669b;
+  background: #ffffff99;
+  border: 1px solid #a8a4c5;
+  border-radius: 8px;
+}
+
+.cd-case {
+  position: relative;
+  width: 80%;
+  margin-left: 20%;
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+
+.cd-case::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  background: linear-gradient(135deg, #d8e4e6, #667c8a 32%, #d4e2df 70%, #94a9b0);
+  border: 2px solid #dce7e8;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 2px #526576, 0 4px 10px #25364755;
+}
+
+.cd-case::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  content: "";
+  background: linear-gradient(135deg, #ffffff70 0%, #ffffff10 40%, transparent 41%, transparent 65%, #e9deff4d);
+  border: 1px solid #ffffff99;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.cd-disc {
+  position: absolute;
+  z-index: 0;
+  top: 5%;
+  left: -24%;
+  display: block;
+  visibility: hidden;
+  width: 90%;
+  height: auto;
+  filter: drop-shadow(0 3px 3px #40577555);
+  animation: cd-spin 4s linear infinite;
+  animation-play-state: paused;
+}
+
+.cd-player.is-playing .cd-disc {
+  visibility: visible;
+  animation-play-state: running;
+}
+
+.cd-cover {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  right: 4px;
+  width: calc(100% - 19px);
+  height: calc(100% - 8px);
+  object-fit: cover;
+  border: 1px solid #667b8d;
+}
+
+.cd-hinge {
+  position: absolute;
+  z-index: 4;
+  top: 4px;
+  bottom: 4px;
+  left: 3px;
+  width: 12px;
+  background: linear-gradient(90deg, #354752ad, #efffff66, #455b67ad);
+  border: 1px solid #d3e1e3;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #526674;
+}
+
+.cd-display {
+  margin-top: 11px;
+  padding: 8px;
+  color: #344e69;
+  background: linear-gradient(#c5e5e6, #e6fbf6);
+  border: 1px solid #8397ae;
+  border-radius: 3px;
+  box-shadow: inset 0 2px 4px #63799840, 0 1px 0 #fff;
+}
+
+.cd-display-status {
+  justify-content: flex-start;
+  font-size: 8px;
+}
+
+.cd-format {
+  margin-left: auto;
+  opacity: 0.65;
+}
+
+.cd-led {
+  width: 6px;
+  height: 6px;
+  background: #8b9eac;
+  border-radius: 50%;
+}
+
+.cd-player.is-playing .cd-led {
+  background: #28bda3;
+  box-shadow: 0 0 5px #28bda3;
+}
+
+.cd-display p {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cd-player-footer {
+  padding: 10px 3px 2px;
+  font-size: 7px;
+}
+
+.cd-speaker {
+  width: 43px;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, #8b95af 0 2px, transparent 2px 5px);
+  border-radius: 5px;
+}
+
+@keyframes cd-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1220px) {
+  .cd-player {
+    position: static;
+    width: 220px;
+  }
+}
+
+@media (max-width: 520px) {
+  .song-heading {
+    flex-direction: column;
+  }
+
+  .cd-player {
+    align-self: flex-end;
+    width: 200px;
+  }
+}
+
 .coach-start-controls {
   font-family: "Trebuchet MS", Arial, sans-serif;
 }
@@ -364,6 +555,10 @@ h1 {
   }
 
   .wave-glint {
+    animation: none;
+  }
+
+  .cd-disc {
     animation: none;
   }
 }

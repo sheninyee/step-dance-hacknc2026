@@ -9,8 +9,25 @@
 </head>
 <body>
   <main class="song-panel" aria-labelledby="page-title">
-    <a class="home-link" href="StepDanceHome.html">← Step Dance</a>
-    <h1 id="page-title">Songs List</h1>
+    <header class="song-heading">
+      <div>
+        <a class="home-link" href="StepDanceHome.html">← Step Dance</a>
+        <h1 id="page-title">Songs List</h1>
+      </div>
+      <aside class="cd-player" id="cd-player" aria-label="CD player">
+        <div class="cd-player-brand"><span>STEP DANCE</span><span>CD-01</span></div>
+        <div class="cd-case" aria-hidden="true">
+          <img class="cd-disc" src="images/cd.png" width="190" height="189" alt="">
+          <img class="cd-cover" id="cd-cover" src="images/step_dance_cd_cover.png" width="200" height="200" alt="">
+          <span class="cd-hinge"></span>
+        </div>
+        <div class="cd-display">
+          <div class="cd-display-status"><span class="cd-led" aria-hidden="true"></span><span id="cd-state">STOPPED</span><span class="cd-format">STEREO</span></div>
+          <p id="cd-song">Choose a song</p>
+        </div>
+        <div class="cd-player-footer" aria-hidden="true"><span>DIGITAL AUDIO</span><span class="cd-speaker"></span></div>
+      </aside>
+    </header>
 
     <section class="song-list" aria-label="Choose a song">
       <article class="song-row selected song-world" data-song="World Is Mine" data-artist="ryo (supercell)" data-preview="audio/world_is_mine.mp3">
