@@ -84,125 +84,31 @@
   </footer>
 
   <script>
-   // --- 1. Float Letter Effect on Logo ---
+    // --- Float Letter Effect on Logo ---
 const logo = document.getElementById('logoText');
 if (logo) {
   logo.innerHTML = [...logo.textContent]
     .map((char, i) => `<span class="char" style="--char-index:${i}">${char === ' ' ? '&nbsp;' : char}</span>`)
     .join('');
 }
-
-// --- 2. Webcam Stream & Recording Logic ---
-const videoElement = document.getElementById('video');
-const startButton = document.getElementById('start-btn');
-const stopButton = document.getElementById('stop-btn');
-const recordedVideoElement = document.getElementById('recorded-video');
-const uploadVideo = document.getElementById('upload-button');
-
-let mediaRecorder;
-let recordedChunks = [];
-
-async function startVideoStream() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    videoElement.srcObject = stream;
-
-    mediaRecorder = new MediaRecorder(stream);
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        recordedChunks.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = async () => {
-      const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-      const videoURL = URL.createObjectURL(videoBlob);
-      recordedVideoElement.src = videoURL;
-    };
-  } catch (err) {
-    console.warn('Camera access denied or unavailable:', err);
-  }
-}
-
-if (startButton) {
-  startButton.addEventListener('click', () => {
-    if (!mediaRecorder) return;
-    recordedChunks = [];
-    mediaRecorder.start();
-    startButton.disabled = true;
-    stopButton.disabled = false;
-  });
-}
-
-if (stopButton) {
-  stopButton.addEventListener('click', () => {
-    if (!mediaRecorder) return;
-    mediaRecorder.stop();
-    startButton.disabled = false;
-    stopButton.disabled = true;
-
-    fetch('/api/log').then(response => response.json()).then(async log => {
-      const tip = await fetch('/api/tip?count=' + log.count).then(response => response.json()).then(result => result.tip)
-        .catch(() => `Great work! Practice session ${log.count} is saved.`);
-      new Audio('/api/speak?text=' + encodeURIComponent(tip)).play();
-    }).catch(() => {});
-  });
-}
-
-async function uploadVideoBlob(videoBlob) {
-  const formData = new FormData();
-  const randomNum = Math.floor(Math.random() * 10000);
-  formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
-
-  try {
-    const response = await fetch('http://127.0.0.1:5000/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.statusText}`);
-    }
-
-    if (response.status === 200) {
-      recordedVideoElement.src = `http://127.0.0.1:5000/download?filename=h264_my-video-${randomNum}_wireframe.webm`;
-      recordedVideoElement.load(); 
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Failed to upload video:', error);
-  }
-}
-
-if (uploadVideo) {
-  uploadVideo.addEventListener('click', () => {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop(); 
-    }
-    const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-    uploadVideoBlob(videoBlob);
-  });
-}
-
-startVideoStream();
-
-// --- 3. Song Bar Audio Player (Dynamic URL Parameters + Play/Pause) ---
 const audio = document.getElementById('practiceAudio');
 const noteThumb = document.getElementById('noteThumb');
 const songTrack = document.getElementById('songTrack');
 const trackProgress = document.getElementById('trackProgress');
 const songTime = document.getElementById('songTime');
+const songHint = document.querySelector('.song-hint');
 
-// Read song passed from songlist page (fallback to World Is Mine)
+// Read from URL, or fallback to localStorage, or fallback to default
 const urlParams = new URLSearchParams(window.location.search);
-const currentSongTitle = urlParams.get('song') || 'World Is Mine';
-const currentAudioSrc = urlParams.get('audio') || 'audio/world_is_mine.mp3';
+const currentSongTitle = urlParams.get('song') || localStorage.getItem('selectedSong') || 'World Is Mine';
+const currentAudioSrc = urlParams.get('audio') || localStorage.getItem('selectedAudio') || 'audio/world_is_mine.mp3';
 
 audio.src = currentAudioSrc;
 audio.load();
+
+if (songHint) {
+  songHint.textContent = `${currentSongTitle} — Click note to play`;
+}
 
 function formatTime(seconds) {
   if (isNaN(seconds)) return '0:00';
@@ -224,12 +130,14 @@ if (noteThumb) {
     if (audio.paused) {
       audio.play().then(() => {
         noteThumb.classList.add('playing');
+        if (songHint) songHint.textContent = `${currentSongTitle} — Playing`;
       }).catch(err => {
         console.warn('Playback error:', err);
       });
     } else {
       audio.pause();
       noteThumb.classList.remove('playing');
+      if (songHint) songHint.textContent = `${currentSongTitle} — Paused`;
     }
   });
 }
@@ -255,6 +163,9 @@ audio.addEventListener('ended', () => {
   if (trackProgress) trackProgress.style.width = '0%';
   if (songTime) {
     songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
+  }
+  if (songHint) {
+    songHint.textContent = `${currentSongTitle} — Finished. Click to replay`;
   }
 });
 
