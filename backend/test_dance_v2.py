@@ -8,6 +8,7 @@ import mediapipe as mp
 import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+import subprocess
 
 CONNECTIONS = np.array([(c.start, c.end) for c in vision.PoseLandmarksConnections.POSE_LANDMARKS],dtype=np.int32,)
 
@@ -47,46 +48,61 @@ detector = vision.PoseLandmarker.create_from_options(options)
 # cv2.destroyAllWindows()
 
 # Load the video file
-cap = cv2.VideoCapture("/home/user/Documents/HackNC/World_is_Mine.mp4")
-frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+def AnalyzeVideo(filepath):
+  cap = cv2.VideoCapture(filepath)
+  frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+  frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+  fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
 
-# Check if the video opened correctly
-if not cap.isOpened():
-  print("Error: Could not open video file.")
-  exit()
+  # Check if the video opened correctly
+  if not cap.isOpened():
+    print("Error: Could not open video file.")
+    print(filepath)
+    exit()
 
-results = [] # compare with input later using np or something instead of list
+  results = [] # compare with input later using np or something instead of list
 
-# write video
-fourcc = cv2.VideoWriter_fourcc(*"MP4V") # try h264?
-out = cv2.VideoWriter("output.mp4", fourcc, fps, (frame_width, frame_height)) # change output to become unique to each input bc concurrent processing could happen
-frame_idx = 0
+  # write video
+  fourcc = cv2.VideoWriter_fourcc(*"mp4v") # try h264?
+  out = cv2.VideoWriter(f"{filepath[:-4]}_wireframe.mp4", fourcc, fps, (frame_width, frame_height)) # change output to become unique to each input bc concurrent processing could happen
+  assert out.isOpened(), "VideoWriter failed to open"
+  frame_idx = 0
+  last_ts = -1
+  # Read and display video frames
+  with vision.PoseLandmarker.create_from_options(options) as detector:  # fresh per video
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-# Read and display video frames
-while True:
-  ret, frame = cap.read()
-  if not ret:
-    break
+        ts = int(cap.get(cv2.CAP_PROP_POS_MSEC))
+        if ts <= 0 and frame_idx > 0:
+            ts = int(round(frame_idx * 1000 / fps))
+        if ts <= last_ts:
+            ts = last_ts + 1
+        last_ts = ts
 
-  rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-  mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = detector.detect_for_video(mp_image, ts)
+        results.append(result)
 
-  timestamp_ms = int((frame_idx / fps) * 1000)
-  detection_result = detector.detect_for_video(mp_image, timestamp_ms)
-  results.append(detection_result)
-  annotated_image = draw_landmarks_on_image(mp_image.numpy_view(), detection_result)
+        annotated = draw_landmarks_on_image(mp_image.numpy_view(), result)
+        out.write(cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
+        frame_idx += 1
 
-  # cv2.imshow("Video", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
-  out.write(cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
-  frame_idx += 1
+    # Press Q to quit
+      # if cv2.waitKey(25) & 0xFF == ord('q'):
+      #     break
 
-  # Press Q to quit
-    # if cv2.waitKey(25) & 0xFF == ord('q'):
-    #     break
-
-# Release resources
-cap.release()
-out.release()
-cv2.destroyAllWindows() # die
+  # Release resources
+  cap.release()
+  out.release()
+  # subprocess.run([
+  #   "ffmpeg", "-y", "-i", f"{filepath[:-4]}_wireframe.mp4",
+  #   "-c:v", "libx264", "-crf", "23", "-preset", "medium",
+  #   "-pix_fmt", "yuv420p", f"{filepath[:-4]}_wireframe1.mp4",
+  #   ], check=True)
+  cv2.destroyAllWindows() # die
+  print("Done!")
+  return True

@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="window-controls">
-        <a id="upload-button" download="recorded-video.webm" class="aero-btn">Upload Video</a>
+        <a id="upload-button" download="recorded-video.mp4" class="aero-btn">Upload Video</a>
       </div>
     </div>
   </main>
@@ -116,7 +116,7 @@
         };
 
         mediaRecorder.onstop = async () => {
-          const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+          const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
           const videoURL = URL.createObjectURL(videoBlob);
           recordedVideoElement.src = videoURL;
           downloadLink.href = videoURL;
@@ -148,7 +148,7 @@
       // 2. Append the blob, specifying a filename and MIME type
       // The third argument ('my-video.webm') is the filename the server will receive
       const randomNum = Math.floor(Math.random() * 10000);
-      formData.append('video', videoBlob, `my-video-${randomNum}.webm`);
+      formData.append('video', videoBlob, `my-video-${randomNum}.mp4`);
 
       try {
           // 3. Send the POST request using fetch
@@ -178,7 +178,7 @@
             // This triggers the 'onstop' event above, which safely builds the blob and uploads
             mediaRecorder.stop(); 
         }
-        const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
         uploadVideoBlob(videoBlob)
       });
 

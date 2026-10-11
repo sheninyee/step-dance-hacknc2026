@@ -2,6 +2,8 @@
 # https://flask.palletsprojects.com/en/stable/quickstart/
 from flask import Flask
 from flask_cors import CORS
+import test_dance_v2
+import subprocess
 app = Flask(__name__)
 CORS(app)
 @app.route("/")
@@ -28,6 +30,35 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def transcode_to_h264(input_path, output_path):
+  # FFmpeg command to transcode video to H.264 (libx264) and audio to AAC
+  command = [
+      "ffmpeg",
+      "-i",
+      input_path,
+      "-c:v",
+      "libx264",
+      "-crf",
+      "23",  # Quality control: lower means better quality (23 is standard)
+      "-preset",
+      "medium",  # Speed/compression tradeoff (ultrafast, fast, medium, slow, etc.)
+      "-c:a",
+      "aac",  # Standard audio codec for MP4 compatibility
+      "-r", "30", "-fps_mode", "cfr",
+      output_path,
+  ]
+
+  try:
+    print(f"Starting transcode for {input_path}...")
+    subprocess.run(command, check=True)
+    print(f"Successfully saved transcoded video to: {output_path}")
+  except subprocess.CalledProcessError as e:
+    print(f"Error during transcoding: {e}")
+
+
+# Example usage:
+transcode_to_h264("input.mp4", "output_h264.mp4")
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
@@ -53,6 +84,13 @@ def upload_file():
                 video_file = request.files["video"]
                 file_path = os.path.join(UPLOAD_FOLDER, video_file.filename)
                 video_file.save(file_path)
+
+                transcode_to_h264(f"{UPLOAD_FOLDER}{video_file.filename}", 
+                f"{UPLOAD_FOLDER}h264_{video_file.filename}")
+                test_dance_v2.AnalyzeVideo(f"{UPLOAD_FOLDER}h264_{video_file.filename}")
+                    # print("hit!")
+            
+            
     return '''
     <!doctype html>
     <title>Upload new File</title>
