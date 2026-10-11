@@ -358,6 +358,33 @@ select,
   animation-delay: -10s;
 }
 
+.home-coach-start {
+  margin-bottom: 1.5rem;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+.home-coach-start button {
+  padding: 0.55rem 0.9rem;
+  color: #30265e;
+  font: inherit;
+  font-weight: 700;
+  background: linear-gradient(#fff, #e9ddff);
+  border: 2px solid #62518f;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.home-coach-start button:focus-visible {
+  outline: 3px solid #171047;
+  outline-offset: 3px;
+}
+
+.home-coach-start p {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 /* Animation keyframe: drift across screen horizontally */
 @keyframes drift {
   0% {
