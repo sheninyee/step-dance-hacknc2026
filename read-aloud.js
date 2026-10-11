@@ -1,11 +1,15 @@
 (() => {
   let welcomed = false;
 
+  // ElevenLabs voice, falling back to the browser voice when it is unavailable.
   function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    new Audio('/api/speak?text=' + encodeURIComponent(text)).play().catch(() => {
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    });
   }
+  window.speak = speak;
 
   function getPageName() {
     const current = document.querySelector('[aria-current="page"]');
