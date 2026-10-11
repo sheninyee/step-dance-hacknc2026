@@ -15,7 +15,7 @@ const coachTranscript = document.getElementById('coach-transcript');
 const danceButton = document.getElementById('dance-button');
 const voiceWave = document.getElementById('voice-wave');
 const waveBars = document.getElementById('wave-bars');
-let selectedRow = songRows.find((row) => row.classList.contains('selected'));
+let selectedRow = songRows.find((row) => row.classList.contains('selected')) || songRows[0];
 let selectedCoverRow = null;
 let activePreviewRow = null;
 let previewStarting = false;
@@ -26,10 +26,12 @@ let coach;
 let coachActionInProgress = false;
 const songVolume = new SongVolumeDucker(previewPlayer.volume);
 
-for (let index = 0; index < 36; index += 1) {
-  waveBars.append(document.createElement('span'));
+if (waveBars) {
+  for (let index = 0; index < 36; index += 1) {
+    waveBars.append(document.createElement('span'));
+  }
 }
-const waveColumns = [...waveBars.children];
+const waveColumns = waveBars ? [...waveBars.children] : [];
 
 function startCoach() {
   if (coachActive) { coach?.resumeAudio(); return; }
@@ -104,10 +106,9 @@ function handleCoachAction(name, args) {
   }
   if (name === 'dance') {
     coach?.cancelPendingAction();
-    // Use the same button handler as a mouse or keyboard click.
     coachActionInProgress = true;
     try { danceButton.click(); } finally { coachActionInProgress = false; }
-    return { selectedSong: selectedRow.dataset.song, dancePageReady: false, message: 'Dance button clicked. Dance page is still being built.' };
+    return { selectedSong: selectedRow.dataset.song, dancePageReady: true, message: 'Opening Practice page...' };
   }
   if (name === 'go_home') {
     coach?.cancelPendingAction();
@@ -145,13 +146,12 @@ function queueSong(row, { playImmediately = false, previous = false } = {}) {
 function selectSong(row, preview = true) {
   selectedRow = row;
   selectedCoverRow = row;
-  // Selection updates artwork immediately; audio may still be queued or blocked.
   updateCDPlayer(cdPlayer.classList.contains('is-playing'), row);
 
   for (const songRow of songRows) {
     const isSelected = songRow === selectedRow;
     songRow.classList.toggle('selected', isSelected);
-    songRow.querySelector('.song-select').setAttribute('aria-pressed', String(isSelected));
+    songRow.querySelector('.song-select')?.setAttribute('aria-pressed', String(isSelected));
   }
 
   statusMessage.textContent = `${selectedRow.dataset.song} selected`;
@@ -177,12 +177,13 @@ function stopPreview() {
   updateCDPlayer(false);
 }
 
-function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow) {
+function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow || selectedRow) {
+  if (!cdPlayer) return;
   cdPlayer.classList.toggle('is-playing', playing);
-  cdState.textContent = playing ? 'NOW PLAYING' : 'STOPPED';
-  cdSong.textContent = row?.dataset.song || 'Choose a song';
+  if (cdState) cdState.textContent = playing ? 'NOW PLAYING' : 'STOPPED';
+  if (cdSong) cdSong.textContent = row?.dataset.song || 'Choose a song';
   const cover = row?.querySelector('.album-art')?.getAttribute('src') || 'images/step_dance_cd_cover.png';
-  if (cdCover.getAttribute('src') !== cover) cdCover.setAttribute('src', cover);
+  if (cdCover && cdCover.getAttribute('src') !== cover) cdCover.setAttribute('src', cover);
 }
 
 async function playRequestedSong(row) {
@@ -241,11 +242,15 @@ async function playPreview(row, requested = false) {
 }
 
 for (const row of songRows) {
-  row.querySelector('.song-select').addEventListener('click', () => selectSong(row));
-  row.addEventListener('pointerenter', () => playPreview(row));
+  row.querySelector('.song-select')?.addEventListener('click', () => selectSong(row));
+  row.addEventListener('pointerenter', () => {
+    updateCDPlayer(false, row);
+    playPreview(row);
+  });
   row.addEventListener('pointerleave', () => {
     if (requestedPlayback) return;
     stopPreview();
+    updateCDPlayer(false, selectedRow);
     statusMessage.textContent = 'Hover over a song to hear a preview';
   });
   row.addEventListener('focusin', () => playPreview(row));
@@ -257,7 +262,6 @@ for (const row of songRows) {
   });
 }
 
-// Follow the music element, including pauses, buffering, and natural track endings.
 previewPlayer.addEventListener('playing', () => updateCDPlayer(true));
 for (const event of ['pause', 'waiting', 'emptied', 'loadstart']) {
   previewPlayer.addEventListener(event, () => updateCDPlayer(false));
@@ -281,7 +285,7 @@ previewPlayer.addEventListener('ended', () => {
   updateCDPlayer(false);
 });
 
-coachButton.addEventListener('click', () => {
+coachButton?.addEventListener('click', () => {
   if (coachActive) {
     if (coach?.context?.state === 'suspended' && !coach.ready) coach.resumeAudio();
     else stopCoach();
@@ -290,12 +294,14 @@ coachButton.addEventListener('click', () => {
   }
 });
 
-danceButton.addEventListener('click', () => {
+// PASSES CHOSEN SONG TO PRACTICE PAGE
+danceButton?.addEventListener('click', () => {
   stopPreview();
-  window.location.href = 'practice.html';
+  const title = selectedRow?.dataset.song || 'World Is Mine';
+  const audio = selectedRow?.dataset.preview || 'audio/world_is_mine.mp3';
+  window.location.href = `practice.html?song=${encodeURIComponent(title)}&audio=${encodeURIComponent(audio)}`;
 });
 
-// Release the microphone when leaving this page.
 window.addEventListener('pagehide', stopCoach);
 const requestedCoachStart = new URLSearchParams(window.location.search || '').get('startCoach') === '1';
 const startupCue = createCoachStartup({
@@ -306,9 +312,11 @@ const startupCue = createCoachStartup({
   announce: !requestedCoachStart
 });
 if (requestedCoachStart) {
-  // Consume the navigation intent so a later refresh does not restart the mic.
   const url = new URL(window.location.href);
   url.searchParams.delete('startCoach');
   window.history.replaceState(null, '', url);
   startCoach();
 }
+
+// Initial CD display load
+if (selectedRow) updateCDPlayer(false, selectedRow);
