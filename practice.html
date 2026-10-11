@@ -139,6 +139,12 @@
       mediaRecorder.stop();
       startButton.disabled = false;
       stopButton.disabled = true;
+      // Log the session in Tiger Data, then speak a Snowflake Cortex tip (or the session count) with ElevenLabs.
+      fetch('/api/log').then(response => response.json()).then(async log => {
+        const tip = await fetch('/api/tip?count=' + log.count).then(response => response.json()).then(result => result.tip)
+          .catch(() => `Great work! Practice session ${log.count} is saved.`);
+        new Audio('/api/speak?text=' + encodeURIComponent(tip)).play();
+      }).catch(() => {});
     });
 
     async function uploadVideoBlob(videoBlob) {
