@@ -100,9 +100,14 @@ export function createServer({ apiKey = process.env.GEMINI_API_KEY, fetchToken =
       } catch { return json(502, { error: 'Could not connect to Gemini. Check your internet connection and try again.' }); }
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return json(405, { error: 'Use GET.' });
+    // ElevenLabs, Tiger Data, and Snowflake handlers are shared with the Vercel deployment (api/*.js).
+    if (/^\/api\/(speak|log|tip)$/.test(pathname)) {
+      try { return await (await import(`./api/${pathname.slice(5)}.js`)).default(req, res); }
+      catch { return json(502, { error: 'This integration is not configured.' }); }
+    }
     if (pathname === '/') pathname = '/songs.html';
     const segments = pathname.split('/');
-    const allowed = /^\/(songs\.html|songs\.css|StepDanceHome\.html|style\.css|cursor\.cur)$/.test(pathname)
+    const allowed = /^\/(songs\.html|songs\.css|StepDanceHome\.html|style\.css|cursor\.cur|practice\.html|practice\.js|settings\.html|read-aloud\.js)$/.test(pathname)
       || /^\/(js|audio|images|fonts)\//.test(pathname);
     if (!allowed || segments.some(segment => segment.startsWith('.') || segment.includes('\\'))) return json(404, { error: 'Not found.' });
     try {
