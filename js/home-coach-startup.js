@@ -1,4 +1,4 @@
-import { createCoachStartup } from 'coach-startup.js';
+import { createCoachStartup } from './coach-startup.js';
 
 let opening = false;
 function openCoach() {

@@ -107,7 +107,7 @@ export function createServer({ apiKey = process.env.GEMINI_API_KEY, fetchToken =
     }
     if (pathname === '/') pathname = '/songs.html';
     const segments = pathname.split('/');
-    const allowed = /^\/(songs\.html|songs\.css|StepDanceHome\.html|style\.css|cursor\.cur|practice\.html|practice\.js|settings\.html|read-aloud\.js)$/.test(pathname)
+    const allowed = /^\/(songs\.html|songs\.css|StepDanceHome\.html|style\.css|cursor\.cur|practice\.html|practice\.js|practice\.css|settings\.html|settings\.css|read-aloud\.js)$/.test(pathname)
       || /^\/(js|audio|images|fonts)\//.test(pathname);
     if (!allowed || segments.some(segment => segment.startsWith('.') || segment.includes('\\'))) return json(404, { error: 'Not found.' });
     try {
