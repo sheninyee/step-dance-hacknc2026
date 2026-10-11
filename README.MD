@@ -42,13 +42,12 @@ The song-page voice coach only runs through this local server. See [VOICE-COACH.
 
 ### AI assistance
 - Service endpoints for ElevenLabs, Tiger Data, Snowflake, and the Gemini camera coach (`api/`): Claude Code
-- Solana save button (`js/solana.js`): Claude Code
 - Practice-page camera coach (`js/practice-coach.js`): Claude Code
 - Demo page (`demo.html`) and Vercel configuration (`vercel.json`): Claude Code
 - Small edits to `server.mjs`, `read-aloud.js`, `practice.html`, `settings.html`, and `js/songs.js`: Claude Code
 - Pose-drawing speed optimisation in `backend/test_dance_v2.py`: Gemini
 - [VOICE-COACH.md](VOICE-COACH.md): created with assistance from AI
-- Connecting the domain to Vercel, merging branches, and drafting this README and our Devpost write-up: Claude Code
+- Drafting this README and our Devpost write-up: Claude Code
 
 We used AI to write first versions of the service integrations, to debug, and to draft documentation. We reviewed and tested the code and changed it as we needed.
 
