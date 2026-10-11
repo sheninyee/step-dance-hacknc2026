@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Step Practice</title>
   <link rel="stylesheet" href="practice.css" />
+  <link rel="stylesheet" href="js/voice-ui.css" />
+  <script src="js/page-coach.js" type="module"></script>
   <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/372.gif" type="image/x-icon">
 </head>
-<body>
+<body data-coach-page="practice">
 
   <!-- Top Header Area -->
   <header class="top-bar">
@@ -42,7 +44,7 @@
       <span class="song-time" id="songTime">0:00 / 0:00</span>
     </div>
     <!-- Audio element for current track -->
-    <audio id="practiceAudio" preload="auto"></audio>
+    <audio id="practiceAudio" preload="auto" autoplay></audio>
   </section>
 
   <!-- Two Windows: Live Webcam & Recorded Playback -->
@@ -200,6 +202,40 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentSongTitle = urlParams.get('song') || localStorage.getItem('selectedSong') || 'World Is Mine';
     const currentAudioSrc = urlParams.get('audio') || localStorage.getItem('selectedAudio') || 'audio/world_is_mine.mp3';
+    let autoplayPending = true;
+    let autoplayStarting = false;
+
+    function clearAutoplayRetry() {
+      autoplayPending = false;
+      window.removeEventListener('pointerup', retryAutoplay);
+      window.removeEventListener('keydown', retryAutoplay);
+      videoElement?.removeEventListener('loadeddata', startPracticeSong);
+    }
+
+    async function startPracticeSong() {
+      if (!audio || !autoplayPending || autoplayStarting) return;
+      autoplayStarting = true;
+      try {
+        await audio.play();
+      } catch (error) {
+        if (!autoplayPending) return;
+        if (error.name === 'NotAllowedError') {
+          if (songHint) songHint.textContent = `${currentSongTitle} — Press Space to start music`;
+        } else {
+          clearAutoplayRetry();
+          console.warn('Audio playback error:', error);
+          if (songHint) songHint.textContent = `${currentSongTitle} — Click note to retry`;
+        }
+      } finally {
+        autoplayStarting = false;
+      }
+    }
+
+    function retryAutoplay(event) {
+      // The note already has its own play/pause control.
+      if (event.target?.closest?.('#noteThumb')) return;
+      startPracticeSong();
+    }
 
     if (audio) {
       audio.src = currentAudioSrc;
@@ -207,7 +243,7 @@
     }
 
     if (songHint) {
-      songHint.textContent = `${currentSongTitle} — Click note to play`;
+      songHint.textContent = `${currentSongTitle} — Starting music`;
     }
 
     function formatTime(seconds) {
@@ -218,6 +254,20 @@
     }
 
     if (audio) {
+      audio.addEventListener('step-dance:pause-music', () => {
+        clearAutoplayRetry();
+        noteThumb?.classList.remove('playing');
+        if (songHint) songHint.textContent = `${currentSongTitle} — Paused`;
+      });
+      audio.addEventListener('playing', () => {
+        clearAutoplayRetry();
+        noteThumb?.classList.add('playing');
+        if (songHint) songHint.textContent = `${currentSongTitle} — Playing`;
+      });
+      audio.addEventListener('pause', () => {
+        noteThumb?.classList.remove('playing');
+        if (songHint && !audio.ended) songHint.textContent = `${currentSongTitle} — Paused`;
+      });
       audio.addEventListener('loadedmetadata', () => {
         if (songTime) {
           songTime.textContent = `0:00 / ${formatTime(audio.duration)}`;
@@ -250,6 +300,7 @@
       noteThumb.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!audio) return;
+        clearAutoplayRetry();
         if (audio.paused) {
           audio.play().then(() => {
             noteThumb.classList.add('playing');
@@ -274,6 +325,18 @@
         }
       });
     }
+
+    // Start on arrival; microphone permission or a page gesture can unlock
+    // playback if the browser initially blocks automatic sound.
+    window.addEventListener('pointerup', retryAutoplay);
+    window.addEventListener('keydown', retryAutoplay);
+    videoElement?.addEventListener('loadeddata', startPracticeSong);
+    window.addEventListener('pagehide', () => {
+      clearAutoplayRetry();
+      audio?.pause();
+    });
+    startPracticeSong();
   </script>
+  <script src="js/practice-coach.js"></script>
 </body>
 </html>

@@ -198,7 +198,8 @@ h1#page-title {
    CD PLAYER
 ========================================================= */
 .cd-player {
-  position: static;
+  position: relative;
+  z-index: 5;
   width: 220px;
   flex: 0 0 auto;
   color: #000000;
@@ -677,7 +678,7 @@ h1#page-title {
   }
 
   .cd-player {
-    position: static;      /* Stacks gracefully above the panel if the screen is too narrow */
+    position: relative;    /* Stacks above the panel while staying in front of the clouds. */
     margin: 0 auto 1.5rem auto;
     width: 250px;
   }

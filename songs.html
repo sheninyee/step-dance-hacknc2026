@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Songlist</title>
+  <style>@view-transition { navigation: auto; }</style>
   <link rel="icon" href="https://file.garden/Ze88s1ucmRDZDhMX/pixels/372.gif" type="image/x-icon">
+  <link rel="stylesheet" href="js/voice-ui.css">
   <link rel="stylesheet" href="songs.css">
+  <script src="js/songs.js" type="module"></script>
 </head>
 <body>
 
@@ -23,7 +26,7 @@
     <div class="cd-player-brand"><span>STEP DANCE</span><span>CD-01</span></div>
     <div class="cd-case" aria-hidden="true">
       <img class="cd-disc" src="images/cd.png" width="190" height="189" alt="">
-      <img class="cd-cover" id="cd-cover" src="images/world_is_mine.webp" width="200" height="200" alt="">
+      <img class="cd-cover" id="cd-cover" src="images/step_dance_cd_cover.png" width="200" height="200" alt="">
       <span class="cd-hinge"></span>
     </div>
     <div class="cd-display">
@@ -32,7 +35,7 @@
         <span id="cd-state">STOPPED</span>
         <span class="cd-format">STEREO</span>
       </div>
-      <p id="cd-song">World Is Mine</p>
+      <p id="cd-song">Choose a song</p>
     </div>
     <div class="cd-player-footer" aria-hidden="true"><span>DIGITAL AUDIO</span><span class="cd-speaker"></span></div>
   </aside>
@@ -72,11 +75,12 @@
     <!-- Voice Coach Section -->
     <section class="voice-coach" aria-label="Coach conversation">
       <div class="coach-start-controls">
-        <button class="coach-button" id="coach-button" type="button" aria-pressed="false">Start voice coach</button>
+        <button class="coach-button" id="coach-button" type="button" aria-pressed="false" aria-keyshortcuts="Space" aria-describedby="coach-start-hint">Start voice coach</button>
         <p id="coach-start-hint">Press space bar to start the voice coach</p>
       </div>
       <div class="coach-copy">
-        <p id="coach-status" role="status">Select a song to practice your dance moves.</p>
+        <p id="coach-status" role="status" aria-live="polite">Press Space or select Start voice coach to begin. Your microphone audio is sent to Google while the coach is on.</p>
+        <p class="coach-transcript" id="coach-transcript" aria-live="polite"></p>
       </div>
     </section>
 
@@ -85,107 +89,12 @@
     <p class="status" id="status" role="status" aria-live="polite">Hover over a song to hear a preview</p>
   </main>
 
-  <audio id="preview-player" preload="none"></audio>
+  <audio id="preview-player" preload="none" aria-hidden="true"></audio>
+  <aside class="voice-wave" id="voice-wave" aria-hidden="true" hidden>
+    <span class="wave-label">MIC LIVE</span>
+    <div class="wave-bars" id="wave-bars"></div>
+    <span class="wave-glint" aria-hidden="true"></span>
+  </aside>
 
-  <!-- Complete Standalone Controller Script -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const cdPlayer = document.getElementById('cd-player');
-      const cdCover = document.getElementById('cd-cover');
-      const cdSong = document.getElementById('cd-song');
-      const cdState = document.getElementById('cd-state');
-      const statusEl = document.getElementById('status');
-      const previewPlayer = document.getElementById('preview-player');
-      const songRows = document.querySelectorAll('.song-row');
-      const danceBtn = document.getElementById('dance-button');
-
-      let currentSelectedRow = document.querySelector('.song-row.selected') || songRows[0];
-
-      // Save initial song
-      localStorage.setItem('selectedSong', currentSelectedRow.dataset.song);
-      localStorage.setItem('selectedAudio', currentSelectedRow.dataset.preview);
-
-      function applySongToCD(row, isPlaying = true) {
-        const songTitle = row.dataset.song;
-        const artist = row.dataset.artist;
-        const img = row.querySelector('.album-art');
-
-        if (img && cdCover) cdCover.src = img.src;
-        if (cdSong) cdSong.textContent = songTitle;
-        if (statusEl) statusEl.textContent = `Selected: ${songTitle} (${artist})`;
-
-        if (isPlaying) {
-          if (cdState) cdState.textContent = 'PLAYING';
-          cdPlayer.classList.add('is-playing');
-
-          if (row.dataset.preview && previewPlayer) {
-            if (previewPlayer.src !== row.dataset.preview) {
-              previewPlayer.src = row.dataset.preview;
-            }
-            previewPlayer.play().catch(() => {});
-          }
-        }
-      }
-
-      function stopCD() {
-        if (cdState) cdState.textContent = 'STOPPED';
-        cdPlayer.classList.remove('is-playing');
-        if (previewPlayer) previewPlayer.pause();
-        if (statusEl) statusEl.textContent = 'Hover over a song to hear a preview';
-      }
-
-      songRows.forEach((row) => {
-        // Hover preview
-        row.addEventListener('mouseenter', () => {
-          applySongToCD(row, true);
-        });
-
-        // Mouse leave
-        row.addEventListener('mouseleave', () => {
-          if (currentSelectedRow && currentSelectedRow !== row) {
-            applySongToCD(currentSelectedRow, false);
-            cdPlayer.classList.remove('is-playing');
-            if (cdState) cdState.textContent = 'STOPPED';
-          } else {
-            stopCD();
-          }
-        });
-
-        // Click selection
-        row.addEventListener('click', (e) => {
-          e.preventDefault();
-          songRows.forEach(r => {
-            r.classList.remove('selected');
-            const btn = r.querySelector('.song-select');
-            if (btn) btn.setAttribute('aria-pressed', 'false');
-          });
-
-          row.classList.add('selected');
-          const btn = row.querySelector('.song-select');
-          if (btn) btn.setAttribute('aria-pressed', 'true');
-
-          currentSelectedRow = row;
-          localStorage.setItem('selectedSong', row.dataset.song);
-          localStorage.setItem('selectedAudio', row.dataset.preview);
-
-          applySongToCD(row, true);
-        });
-      });
-
-      // Navigate with chosen song to practice.html
-      if (danceBtn) {
-        danceBtn.addEventListener('click', () => {
-          if (previewPlayer) previewPlayer.pause();
-          const songTitle = currentSelectedRow?.dataset.song || 'World Is Mine';
-          const audioSrc = currentSelectedRow?.dataset.preview || 'audio/world_is_mine.mp3';
-
-          localStorage.setItem('selectedSong', songTitle);
-          localStorage.setItem('selectedAudio', audioSrc);
-
-          window.location.href = `practice.html?song=${encodeURIComponent(songTitle)}&audio=${encodeURIComponent(audioSrc)}`;
-        });
-      }
-    });
-  </script>
 </body>
 </html>

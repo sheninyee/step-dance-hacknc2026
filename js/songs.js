@@ -1,6 +1,8 @@
 import { GeminiCoach } from './gemini-coach.js';
 import { SongVolumeDucker } from './song-volume.js';
 import { createCoachStartup } from './coach-startup.js';
+import { createMicMeter, coachEnabled, rememberCoach } from './voice-ui.js';
+import { pausePageMusic } from './music-controls.js';
 
 const songRows = [...document.querySelectorAll('.song-row')];
 const statusMessage = document.getElementById('status');
@@ -14,29 +16,28 @@ const coachStatus = document.getElementById('coach-status');
 const coachTranscript = document.getElementById('coach-transcript');
 const danceButton = document.getElementById('dance-button');
 const voiceWave = document.getElementById('voice-wave');
-const waveBars = document.getElementById('wave-bars');
 let selectedRow = songRows.find((row) => row.classList.contains('selected')) || songRows[0];
 let selectedCoverRow = null;
 let activePreviewRow = null;
 let previewStarting = false;
 let requestedPlayback = false;
+let hoverPreviewRow = null;
+let playbackAfterPreview = null;
 let previewRequestId = 0;
+let musicPaused = false;
 let coachActive = false;
 let coach;
 let coachActionInProgress = false;
 const songVolume = new SongVolumeDucker(previewPlayer.volume);
 
-if (waveBars) {
-  for (let index = 0; index < 36; index += 1) {
-    waveBars.append(document.createElement('span'));
-  }
-}
-const waveColumns = waveBars ? [...waveBars.children] : [];
+const micMeter = createMicMeter(voiceWave, document);
 
 function startCoach() {
   if (coachActive) { coach?.resumeAudio(); return; }
   startupCue.stopHint();
+  rememberCoach(true, window);
   coachActive = true;
+  micMeter.update();
   stopPreview();
   coachButton.textContent = 'Stop voice coach';
   coachButton.setAttribute('aria-pressed', 'true');
@@ -53,17 +54,13 @@ function startCoach() {
     },
     onLevel: (volume, speaking, ready) => {
       previewPlayer.volume = songVolume.update(volume, speaking, performance.now());
-      voiceWave.hidden = false;
-      voiceWave.querySelector('.wave-label').textContent = speaking ? 'COACH SPEAKING' : ready ? 'MIC LIVE' : 'CONNECTING';
-      waveColumns.forEach((column, index) => {
-        column.style.height = `${5 + Math.min(1, volume * 12) * (12 + 22 * Math.abs(Math.sin(index * 1.71)))}px`;
-      });
+      micMeter.update(volume, speaking, ready);
     },
     onAction: handleCoachAction,
     onStopped: () => {
       previewPlayer.volume = songVolume.reset();
       coachActive = false;
-      voiceWave.hidden = true;
+      micMeter.hide();
       coachButton.textContent = 'Start voice coach';
       coachButton.setAttribute('aria-pressed', 'false');
     }
@@ -71,7 +68,8 @@ function startCoach() {
   coach.start();
 }
 
-function stopCoach() {
+function stopCoach(forget = true) {
+  if (forget) rememberCoach(false, window);
   coach?.stop();
   coachStatus.textContent = 'Voice coach paused. Press Space or select Start whenever you want to talk again.';
 }
@@ -104,15 +102,32 @@ function handleCoachAction(name, args) {
     statusMessage.textContent = 'Song audio stopped';
     return { stopped: true };
   }
+  if (name === 'pause_music') {
+    coach?.cancelPendingAction();
+    previewRequestId += 1;
+    previewStarting = false;
+    musicPaused = true;
+    requestedPlayback = false;
+    hoverPreviewRow = null;
+    playbackAfterPreview = null;
+    const result = pausePageMusic(document);
+    updateCDPlayer(false);
+    statusMessage.textContent = 'Music paused';
+    return result;
+  }
   if (name === 'dance') {
     coach?.cancelPendingAction();
     coachActionInProgress = true;
     try { danceButton.click(); } finally { coachActionInProgress = false; }
     return { selectedSong: selectedRow.dataset.song, dancePageReady: true, message: 'Opening Practice page...' };
   }
-  if (name === 'go_home') {
+  if (name === 'go_home' || name === 'navigate_page') {
+    const page = name === 'go_home' ? 'home' : args.page;
+    const routes = { home: 'StepDanceHome.html', songs: 'songs.html', practice: 'practice.html', settings: 'settings.html' };
+    if (!Object.hasOwn(routes, page)) return { error: 'Choose home, songs, practice, or settings.' };
+    if (page === 'songs') return { currentPage: 'songs', message: 'You are already on the song list page.' };
     coach?.cancelPendingAction();
-    return { deferred: () => { stopCoach(); window.location.href = 'StepDanceHome.html'; } };
+    return { deferred: () => { stopCoach(false); window.location.href = routes[page]; } };
   }
   if (name === 'pause_coach') {
     coach?.cancelPendingAction();
@@ -123,6 +138,7 @@ function handleCoachAction(name, args) {
 
 function queueSong(row, { playImmediately = false, previous = false } = {}) {
   coach?.cancelPendingAction();
+  const startTime = musicPaused && activePreviewRow === row ? previewPlayer.currentTime : 0;
   stopPreview();
   selectSong(row, false);
   const result = {
@@ -136,11 +152,11 @@ function queueSong(row, { playImmediately = false, previous = false } = {}) {
         : `Great choice! Starting ${row.dataset.song} now. Do you want to dance to it?`
   };
   if (playImmediately) {
-    playRequestedSong(row);
+    playRequestedSong(row, startTime);
     return { ...result, playbackStarted: true };
   }
   statusMessage.textContent = `${row.dataset.song} queued — playing after the coach finishes`;
-  return { ...result, deferred: () => playRequestedSong(row) };
+  return { ...result, deferred: () => playRequestedSong(row, startTime) };
 }
 
 function selectSong(row, preview = true) {
@@ -162,22 +178,26 @@ function selectSong(row, preview = true) {
       coach.tell(`Page event: the user clicked ${row.dataset.song}. It is now selected and the page is starting its audio automatically. Say "Great choice! Starting ${row.dataset.song} now. Do you want to dance to it?" Do not ask for playback confirmation or call a tool. Wait for the user's answer to the dance question while the audio plays.`);
       playRequestedSong(row);
     } else {
-      playPreview(row, requestedPlayback);
+      playRequestedSong(row);
     }
   }
 }
 
-function stopPreview() {
+function stopPreview({ keepHoverPreview = false } = {}) {
   previewRequestId += 1;
   requestedPlayback = false;
   activePreviewRow = null;
   previewStarting = false;
+  if (!keepHoverPreview) {
+    hoverPreviewRow = null;
+    playbackAfterPreview = null;
+  }
   previewPlayer.pause();
   previewPlayer.currentTime = 0;
   updateCDPlayer(false);
 }
 
-function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow || selectedRow) {
+function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow) {
   if (!cdPlayer) return;
   cdPlayer.classList.toggle('is-playing', playing);
   if (cdState) cdState.textContent = playing ? 'NOW PLAYING' : 'STOPPED';
@@ -186,39 +206,42 @@ function updateCDPlayer(playing, row = activePreviewRow || selectedCoverRow || s
   if (cdCover && cdCover.getAttribute('src') !== cover) cdCover.setAttribute('src', cover);
 }
 
-async function playRequestedSong(row) {
-  const result = await playPreview(row, true);
+async function playRequestedSong(row, startTime = 0) {
+  if (musicPaused && activePreviewRow === row) startTime = previewPlayer.currentTime;
+  musicPaused = false;
+  const result = await playPreview(row, true, { startTime });
   if (result?.error && coachActive) coach.tell(`Playback failed: ${result.error}. Explain this briefly. The user can click the song title to try again. Do not call play_song again automatically.`);
 }
 
-async function playPreview(row, requested = false) {
-  if (!requested && (coachActive || requestedPlayback)) {
-    if (requestedPlayback) return;
-    statusMessage.textContent = `${row.dataset.song} — previews are paused while the voice coach is on`;
-    return { error: 'Automatic previews are paused while the coach is on.' };
-  }
+async function playPreview(row, requested = false, { keepHoverPreview = false, startTime = 0 } = {}) {
   if (!row.dataset.preview) {
     statusMessage.textContent = `No preview is available for ${row.dataset.song}`;
     return { error: `No audio is available for ${row.dataset.song}.` };
   }
 
   if (activePreviewRow === row && (previewStarting || !previewPlayer.paused)) {
+    if (requested) {
+      requestedPlayback = true;
+      hoverPreviewRow = null;
+      playbackAfterPreview = null;
+    }
     return;
   }
 
-  stopPreview();
+  stopPreview({ keepHoverPreview });
   const requestId = previewRequestId;
   requestedPlayback = requested;
   activePreviewRow = row;
   previewPlayer.src = row.dataset.preview;
   previewPlayer.load();
+  previewPlayer.currentTime = startTime;
   previewStarting = true;
 
   try {
     await previewPlayer.play();
     if (activePreviewRow === row && requestId === previewRequestId) {
       updateCDPlayer(true);
-      statusMessage.textContent = `Playing ${requested ? 'song' : 'preview'}: ${row.dataset.song}`;
+      statusMessage.textContent = `Playing ${requestedPlayback ? 'song' : 'preview'}: ${row.dataset.song}`;
       return { playing: row.dataset.song };
     }
   } catch (error) {
@@ -241,24 +264,32 @@ async function playPreview(row, requested = false) {
   }
 }
 
+function startHoverPreview(row) {
+  if (musicPaused) return;
+  // Hovering the playing song keeps it at its current position.
+  if (activePreviewRow === row && (previewStarting || !previewPlayer.paused)) return;
+  if (requestedPlayback && activePreviewRow) {
+    playbackAfterPreview = { row: activePreviewRow, time: previewPlayer.currentTime };
+  }
+  hoverPreviewRow = row;
+  return playPreview(row, false, { keepHoverPreview: true });
+}
+
+function endHoverPreview(row) {
+  if (hoverPreviewRow !== row || requestedPlayback) return;
+  const resume = playbackAfterPreview;
+  stopPreview();
+  if (resume) return playPreview(resume.row, true, { startTime: resume.time });
+  statusMessage.textContent = 'Hover over a song to hear a preview';
+}
+
 for (const row of songRows) {
   row.querySelector('.song-select')?.addEventListener('click', () => selectSong(row));
-  row.addEventListener('pointerenter', () => {
-    updateCDPlayer(false, row);
-    playPreview(row);
-  });
-  row.addEventListener('pointerleave', () => {
-    if (requestedPlayback) return;
-    stopPreview();
-    updateCDPlayer(false, selectedRow);
-    statusMessage.textContent = 'Hover over a song to hear a preview';
-  });
-  row.addEventListener('focusin', () => playPreview(row));
+  row.addEventListener('pointerenter', () => startHoverPreview(row));
+  row.addEventListener('pointerleave', () => endHoverPreview(row));
+  row.addEventListener('focusin', () => startHoverPreview(row));
   row.addEventListener('focusout', (event) => {
-    if (!requestedPlayback && !row.contains(event.relatedTarget)) {
-      stopPreview();
-      statusMessage.textContent = 'Hover over a song to hear a preview';
-    }
+    if (!row.contains(event.relatedTarget)) endHoverPreview(row);
   });
 }
 
@@ -302,21 +333,23 @@ danceButton?.addEventListener('click', () => {
   window.location.href = `practice.html?song=${encodeURIComponent(title)}&audio=${encodeURIComponent(audio)}`;
 });
 
-window.addEventListener('pagehide', stopCoach);
+// Release the microphone when leaving this page.
+window.addEventListener('pagehide', () => stopCoach(false));
+window.addEventListener('pageshow', event => { if (event.persisted && coachEnabled(window)) startCoach(); });
 const requestedCoachStart = new URLSearchParams(window.location.search || '').get('startCoach') === '1';
 const startupCue = createCoachStartup({
   surface: window,
+  coachButton,
   isActive: () => coachActive,
   start: startCoach,
   onActive: () => coach?.resumeAudio(),
-  announce: !requestedCoachStart
+  announce: !requestedCoachStart && !coachEnabled(window)
 });
 if (requestedCoachStart) {
   const url = new URL(window.location.href);
   url.searchParams.delete('startCoach');
   window.history.replaceState(null, '', url);
   startCoach();
+} else if (coachEnabled(window)) {
+  startCoach();
 }
-
-// Initial CD display load
-if (selectedRow) updateCDPlayer(false, selectedRow);
