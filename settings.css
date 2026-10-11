@@ -3,6 +3,7 @@
   src: url("./fonts/Typo_Round_Regular_Demo.otf") format("opentype");
 }
 
+/* Base Reset (Fixed hyphen typo to asterisk) */
 * {
   margin: 0;
   padding: 0;
@@ -22,7 +23,24 @@ body {
   align-items: center;
 }
 
-/* Canvas Bubble Layer */
+/* Custom Cursor Rules */
+*,
+*::before,
+*::after {
+  cursor: url("cursor.cur"), auto !important;
+}
+
+a,
+button,
+input,
+textarea,
+select,
+[role="button"],
+*:hover {
+  cursor: url("cursor.cur"), auto !important;
+}
+
+/* Bubble Canvas */
 #bubble-canvas {
   position: fixed;
   inset: 0;
@@ -39,7 +57,7 @@ body {
   align-items: center;
   width: 100%;
   max-width: 580px;
-  padding-bottom: 90px; /* Leaves clear space above the grass */
+  padding-bottom: 90px;
   z-index: 5;
   animation: slideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -70,14 +88,15 @@ body {
   }
 }
 
-/* --- Logo --- */
+/* --- Logo & Floating Letter Animation --- */
 .menu-logo {
   font-size: 4.5rem;
   font-weight: 900;
-  color: #fcfbfbb7;
+  color: #ffffff;
   letter-spacing: 2px;
   margin-bottom: 2.5rem;
   display: inline-block;
+  perspective: 1000px;
   text-shadow: 
     0 2px 0 #0379c3,
     0 4px 0 #d1d9de,
@@ -85,85 +104,194 @@ body {
     0 8px 0 #0379c3,
     0 10px 10px rgba(0, 0, 0, 0.3),
     0 15px 20px rgba(0, 0, 0, 0.2);
-  display: inline-block;
-  perspective: 1000px;
 }
 
+.menu-logo .char {
+  display: inline-block;
+  position: relative;
+  transform-origin: 50% 100%;
+  animation-duration: 2200ms;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+  animation-delay: calc(var(--char-index, 0) * -0.5s);
+  animation-name: float;
+}
 
-/* --- Menu List & Dividers --- */
+.menu-logo .char:nth-child(2n) {
+  animation-name: float-alt;
+}
+
+@keyframes float {
+  from {
+    transform: translate(2%, -10%) rotate(-1deg);
+  }
+  to {
+    transform: translate(-2%, 5%) rotate(3deg);
+  }
+}
+
+@keyframes float-alt {
+  from {
+    transform: translate(0%, -5%) rotate(-1deg);
+  }
+  to {
+    transform: translate(2%, 10%) rotate(3deg);
+  }
+}
+
+/* Glass capsule menu container */
 .menu-list {
   width: 100%;
   display: flex;
   flex-direction: column;
-  border-top: 2px solid #111;
-  border-bottom: 2px solid #111;
+  gap: 14px;
+  border: none; /* Remove harsh black lines */
 }
 
+/* Frutiger Aero Glass Button/Link */
 .menu-item {
   width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 2px solid #111;
-  padding: 1.15rem 1rem;
-  font-family: inherit;
-  font-size: 2.3rem;
-  color: #111;
-  text-align: center;
+  position: relative;
+  display: block;
   text-decoration: none;
+  font-family: inherit;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0b3b5b; /* Deep sapphire blue provides WCAG AAA contrast */
+  text-align: center;
+  padding: 0.85rem 1.5rem;
+  
+  /* Aero Glass Base */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.45) 45%,
+    rgba(215, 238, 255, 0.35) 50%,
+    rgba(195, 228, 255, 0.6) 100%
+  );
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  
+  /* Curved aerodynamic borders */
+  border-radius: 40px;
+  
+  /* Specular rim lighting: bright top highlight, soft bottom bevel */
+  border-top: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.6);
+  
+  box-shadow: 
+    0 6px 16px rgba(0, 60, 110, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 4px rgba(70, 150, 220, 0.2);
+
+  /* Subtle letter glow */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
-  user-select: none;
 }
 
-/* Remove bottom border on the last item so the container handles it */
-.menu-item:last-child {
-  border-bottom: none;
-}
-
+/* Hover state: energized cyan bloom */
 .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.45);
-  color: #241142;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(235, 250, 255, 0.6) 48%,
+    rgba(168, 225, 255, 0.6) 52%,
+    rgba(120, 205, 255, 0.8) 100%
+  );
+  color: #032d47;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 10px 22px rgba(0, 120, 215, 0.25),
+    0 0 15px rgba(120, 215, 255, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
 }
 
 .menu-item:active {
-  transform: scale(0.98);
+  transform: translateY(1px) scale(0.99);
+}
+/* --- Floating Clouds Layer --- */
+.clouds-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 55vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* --- Swaying Grass Layer (Bottom) --- */
-.grass-layer {
+.cloud {
+  position: absolute;
+  width: 160px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+  animation: drift linear infinite;
+  will-change: transform;
+}
+
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  width: 70px;
+  height: 70px;
+  top: -35px;
+  left: 25px;
+}
+
+.cloud::after {
+  width: 90px;
+  height: 90px;
+  top: -45px;
+  left: 65px;
+}
+
+.cloud-1 { top: 8%; transform: scale(0.9); opacity: 0.85; animation-duration: 42s; animation-delay: -5s; }
+.cloud-2 { top: 18%; transform: scale(1.3); opacity: 0.95; animation-duration: 32s; animation-delay: -18s; }
+.cloud-3 { top: 30%; transform: scale(0.65); opacity: 0.75; animation-duration: 55s; animation-delay: -28s; }
+.cloud-4 { top: 12%; transform: scale(1.1); opacity: 0.9; animation-duration: 38s; animation-delay: -35s; }
+.cloud-5 { top: 25%; transform: scale(0.8); opacity: 0.8; animation-duration: 48s; animation-delay: -10s; }
+
+@keyframes drift {
+  0% { left: -250px; }
+  100% { left: 100vw; }
+}
+
+/* --- Tree Line Layer --- */
+.trees-layer {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100vw;
-  height: 110px;
-  display: flex;
-  justify-content: space-around;
   pointer-events: none;
   z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   overflow: hidden;
+  line-height: 0;
 }
 
-.grass-blade {
-  width: 18%;
-  height: 100%;
-  transform-origin: bottom center;
-  animation: sway 2.6s ease-in-out infinite alternate;
-}
-
-/* Individual sway timing and angles */
-.grass-1 { animation-duration: 2.4s; animation-delay: 0s; }
-.grass-2 { animation-duration: 3.1s; animation-delay: -0.8s; }
-.grass-3 { animation-duration: 2.1s; animation-delay: -1.4s; }
-.grass-4 { animation-duration: 2.8s; animation-delay: -0.3s; }
-.grass-5 { animation-duration: 3.4s; animation-delay: -1.9s; }
-.grass-6 { animation-duration: 2.3s; animation-delay: -0.6s; }
-
-@keyframes sway {
-  0% {
-    transform: rotate(-7deg) skewX(-4deg);
-  }
-  100% {
-    transform: rotate(8deg) skewX(5deg);
-  }
+.trees-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  object-position: bottom center;
+  transform: translateY(12px);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 1) 25%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 1) 25%);
 }

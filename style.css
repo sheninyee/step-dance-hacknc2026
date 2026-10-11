@@ -169,25 +169,65 @@ color: #fbf9f9;
 }
 
 /* Wide Action Button */
+/* Frutiger Aero Glass Button */
+
 .btn-ready {
   width: 100%;
   padding: 1rem 1.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  background-color: #fdfcfcc3;
-  color: #454444;
-  border: 2px solid #a7a5a9;
-  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0b3b5b;
+  text-align: center;
+  border-radius: 40px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
   margin-bottom: 1.5rem;
-  transition: transform 0.2s ease;
+
+  /* Frosted aero glass gradient */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.45) 45%,
+    rgba(215, 238, 255, 0.35) 50%,
+    rgba(195, 228, 255, 0.6) 100%
+  );
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+
+  /* Top highlight and bottom bevel */
+  border-top: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1.5px solid rgba(135, 185, 220, 0.6);
+
+  box-shadow: 
+    0 6px 16px rgba(0, 60, 110, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 4px rgba(70, 150, 220, 0.2);
+
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-ready:hover {
-  background-color: #d9dbec;
-   animation: bounce 0.6s infinite alternate;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(235, 250, 255, 0.6) 48%,
+    rgba(168, 225, 255, 0.6) 52%,
+    rgba(120, 205, 255, 0.8) 100%
+  );
+  color: #032d47;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 10px 22px rgba(0, 120, 215, 0.25),
+    0 0 15px rgba(120, 215, 255, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+}
+
+.btn-ready:active {
+  transform: translateY(1px) scale(0.99);
 }
 @keyframes bounce {
   0% {
@@ -196,10 +236,6 @@ color: #fbf9f9;
   100% {
     transform: translateY(-8px);
   }
-}
-
-.btn-ready:active {
-  transform: scale(0.99);
 }
 
 /* 3 Text Boxes / Cards */
