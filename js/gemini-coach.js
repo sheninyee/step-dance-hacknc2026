@@ -80,7 +80,7 @@ export class GeminiCoach {
       if (this.disposed) return;
       let credentials;
       try { credentials = await response.json(); }
-      catch { throw new Error('Start the app with npm start, then open http://localhost:3000/songs.html.'); }
+      catch { throw new Error('The voice coach could not start. Please refresh the page and try again.'); }
       if (!response.ok) throw new Error(credentials.error || 'Gemini session could not start.');
       this.socket = new WebSocket(`${ENDPOINT}?access_token=${encodeURIComponent(credentials.token)}`);
       this.socket.binaryType = 'arraybuffer';
